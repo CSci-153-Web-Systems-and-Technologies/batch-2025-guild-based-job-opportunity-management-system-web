@@ -1,0 +1,46 @@
+/* Scoped styles for the login page background + overlay */
+.container {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem; /* mobile */
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 24rem; /* 384px */
+}
+
+/* Mount animation used by login / sign-up / forgot-password content */
+.contentEnter {
+  animation: slideUpFade 380ms cubic-bezier(.2,.9,.3,1) both;
+}
+
+@keyframes slideUpFade {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.darkOverlay {
+  background: rgba(0, 0, 0, 0.45);
+}
