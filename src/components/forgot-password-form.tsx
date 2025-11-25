@@ -14,6 +14,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useState } from 'react'
+import { motion } from 'framer-motion'
+import styles from './login-form.module.css'
 
 export function ForgotPasswordForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
@@ -42,11 +44,18 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
   }
 
   return (
-    <div className={cn('flex flex-col gap-6', className)} {...props}>
+    <motion.div
+      className={cn('flex flex-col gap-6', className)}
+      initial={{ opacity: 0, y: 12, scale: 0.995 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -8, scale: 0.995 }}
+      transition={{ duration: 0.45, ease: [0.2, 0.9, 0.3, 1] }}
+      {...(props as any)}
+    >
       {success ? (
-        <Card>
+        <Card className={cn(styles.glass, className)}>
           <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
+            <CardTitle className="text-2xl text-white text-center">Check Your Email</CardTitle>
             <CardDescription>Password reset instructions sent</CardDescription>
           </CardHeader>
           <CardContent>
@@ -57,9 +66,9 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className={cn(styles.glass, className)}>
           <CardHeader>
-            <CardTitle className="text-2xl">Reset Your Password</CardTitle>
+            <CardTitle className="text-2xl text-white text-center">Reset Your Password</CardTitle>
             <CardDescription>
               Type in your email and we&apos;ll send you a link to reset your password
             </CardDescription>
@@ -79,13 +88,17 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
                   />
                 </div>
                 {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Sending...' : 'Send reset email'}
+                <Button
+                  type="submit"
+                  className="w-full md:w-48 mx-auto bg-gradient-to-b from-[#253C45] to-[#4E91A9] text-white shadow-md hover:shadow-xl transition-shadow"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Sending...' : 'Send email'}
                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">
                 Already have an account?{' '}
-                <Link href="/auth/login" className="underline underline-offset-4">
+                <Link href="/auth/login" className="font-semibold">
                   Login
                 </Link>
               </div>
@@ -93,6 +106,6 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
           </CardContent>
         </Card>
       )}
-    </div>
+    </motion.div>
   )
 }

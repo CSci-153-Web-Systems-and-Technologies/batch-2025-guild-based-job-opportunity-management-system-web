@@ -1,0 +1,26 @@
+.glass {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.28);
+  color: #ffffff; /* force white text within the glass card */
+}
+
+.glassDark {
+  background-color: rgba(0,0,0,0.28);
+  border: 1px solid rgba(0,0,0,0.16);
+  color: #ffffff;
+}
+
+/* Ensure inputs and placeholders are readable on the glass background */
+.glass input,
+.glass textarea,
+.glass select {
+  color: #ffffff;
+}
+
+.glass input::placeholder,
+.glass textarea::placeholder {
+  color: rgba(255,255,255,0.7);
+}

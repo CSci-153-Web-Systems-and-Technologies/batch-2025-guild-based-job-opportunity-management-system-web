@@ -1,0 +1,22 @@
+.card {
+  background: var(--card);
+  color: var(--card-foreground);
+  border-radius: 0.75rem; /* rounded-xl */
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.title {
+  font-weight: 600;
+}
+
+.description {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  color: #ffffff;
+}
+
+.content {
+  padding-left: 1.5rem; /* px-6 */
+  padding-right: 1.5rem;
+}

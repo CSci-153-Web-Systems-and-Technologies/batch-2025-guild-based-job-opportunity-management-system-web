@@ -45,6 +45,8 @@
 
 :root {
   --radius: 0.625rem;
+  --font-geist-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", "Helvetica Neue", monospace;
   --background: oklch(1 0 0);
   --foreground: oklch(0.13 0.028 261.692);
   --card: oklch(1 0 0);

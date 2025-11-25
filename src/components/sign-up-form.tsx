@@ -15,6 +15,8 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { motion } from 'framer-motion'
+import styles from './login-form.module.css'
 
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
@@ -54,10 +56,18 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
   }
 
   return (
-    <div className={cn('flex flex-col gap-6', className)} {...props}>
-      <Card>
+    <motion.div
+      className={cn('flex flex-col gap-6', className)}
+      initial={{ opacity: 0, y: 12, scale: 0.995 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -8, scale: 0.995 }}
+      transition={{ duration: 0.45, ease: [0.2, 0.9, 0.3, 1] }}
+      {...(props as any)}
+    >
+      {/* reuse the glass styles from login-form */}
+      <Card className={cn(styles.glass, className)}>
         <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
+          <CardTitle className="text-2xl text-white text-center">Get started</CardTitle>
           <CardDescription>Create a new account</CardDescription>
         </CardHeader>
         <CardContent>
@@ -99,19 +109,19 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full bg-gradient-to-b from-[#2A4853] to-[#4E91A9]" disabled={isLoading}>
                 {isLoading ? 'Creating an account...' : 'Sign up'}
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
               Already have an account?{' '}
-              <Link href="/auth/login" className="underline underline-offset-4">
+              <Link href="/auth/login" className="font-semibold">
                 Login
               </Link>
             </div>
           </form>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   )
 }

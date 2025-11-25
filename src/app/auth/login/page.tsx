@@ -1,9 +1,20 @@
 import { LoginForm } from '@/components/login-form'
+import bg from '@/assets/login-background.jpg'
+import styles from './page.module.css'
 
 export default function Page() {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
+    <div
+      className={styles.container}
+      style={{
+        backgroundImage: `url(${bg.src})`,
+        backgroundPosition: 'center',
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <div className={styles.overlay} />
+      <div className={`${styles.content} ${styles.contentEnter}`}>
         <LoginForm />
       </div>
     </div>
