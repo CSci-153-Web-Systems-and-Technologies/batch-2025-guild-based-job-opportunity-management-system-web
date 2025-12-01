@@ -57,7 +57,13 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       transition={{ duration: 0.45, ease: [0.2, 0.9, 0.3, 1] }}
       {...(props as any)}
     >
-      <Card className={cn(styles.glass, className)}>
+      <Card
+        className={cn('glass', className)}
+        style={{
+          backgroundColor: 'rgba(255,255,255,0.12)',
+          border: '1px solid rgba(255,255,255,0.12)',
+        }}
+      >
         <CardHeader>
           <CardTitle className="text-2xl text-white text-center">Welcome Back</CardTitle>
           <CardDescription>Enter your email below to login to your account</CardDescription>
@@ -118,7 +124,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button
                 type="submit"
-                className="w-full md:w-48 mx-auto bg-gradient-to-b from-[#2A4853] to-[#4E91A9] text-white shadow-md hover:shadow-xl transition-shadow"
+                className="w-full md:w-48 mx-auto bg-gradient-to-b from-[#2A4853] to-[#4E91A9] text-white shadow-[0_3px_5px_rgba(0,0,0,0.6)] hover:shadow-[0_5px_7px_rgba(0,0,0,0.7)] transition-shadow"
                 disabled={isLoading}
               >
                 {isLoading ? 'Logging in...' : 'Login'}

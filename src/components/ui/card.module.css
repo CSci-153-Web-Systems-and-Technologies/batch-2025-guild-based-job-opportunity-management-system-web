@@ -20,3 +20,34 @@
   padding-left: 1.5rem; /* px-6 */
   padding-right: 1.5rem;
 }
+
+/* Global glass modifier so any Card can opt into the glassmorphism look by
+   adding the `glass` class (not module-scoped). This centralizes the glass
+   styles and avoids cross-file CSS module selector issues. */
+:global(.glass) {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background-color: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.28);
+  color: #ffffff;
+  border-radius: 0.75rem; /* keep card radius */
+}
+
+:global(.glassDark) {
+  background-color: rgba(0,0,0,0.28);
+  border: 1px solid rgba(0,0,0,0.16);
+  color: #ffffff;
+}
+
+/* Inputs inside a glass card should remain readable */
+:global(.glass) input,
+:global(.glass) textarea,
+:global(.glass) select {
+  color: #ffffff;
+}
+
+:global(.glass) input::placeholder,
+:global(.glass) textarea::placeholder {
+  color: rgba(255,255,255,0.7);
+}

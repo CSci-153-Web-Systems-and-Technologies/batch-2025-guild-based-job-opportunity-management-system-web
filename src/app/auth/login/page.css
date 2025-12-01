@@ -14,8 +14,8 @@
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .content {
@@ -28,3 +28,4 @@
 .darkOverlay {
   background: rgba(0, 0, 0, 0.45);
 }
+
