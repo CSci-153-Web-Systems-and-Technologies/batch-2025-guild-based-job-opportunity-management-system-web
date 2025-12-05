@@ -123,7 +123,7 @@ export function Topbar() {
   }
 
   return (
-    <div className="flex items-center justify-between py-4 px-6 border-b border-border bg-transparent">
+    <div className="flex items-center justify-end py-4 px-6 border-b border-border bg-transparent">
       <div className="flex items-center gap-4">
         <h1 className="text-lg font-semibold">Dashboard</h1>
         <div className="relative">
