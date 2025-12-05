@@ -42,7 +42,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-20 m-4 min-h-[calc(100vh-2rem)] bg-[#081A21] rounded-2xl p-4 hidden md:flex flex-col overflow-hidden">
+    <aside className="w-17 m-4 min-h-[calc(100vh-2rem)] bg-[#081A21] rounded-3xl p-4 hidden md:flex flex-col overflow-hidden">
       {/* Top: logo */}
       <div className="flex-none mb-6 flex items-center justify-center">
         <Link href="/">
