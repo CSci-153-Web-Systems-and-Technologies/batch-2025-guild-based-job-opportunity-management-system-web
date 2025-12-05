@@ -20,7 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div
       className="min-h-screen flex"
-      style={{ background: 'linear-gradient(90deg, #253C45 0%, #145E7B 100%)' }}
+      style={{ background: 'linear-gradient(90deg, #253C45 0%, #164557 100%)' }}
     >
       {/* Sidebar (hidden on small screens) */}
       <Sidebar />
