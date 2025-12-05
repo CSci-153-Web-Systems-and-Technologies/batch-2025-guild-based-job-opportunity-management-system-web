@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import SearchIcon from '@/assets/icons/search.png'
 import NotificationIcon from '@/assets/icons/notification.png'
 import { createClient } from '@/lib/client'
+import { ensureProfile } from '@/lib/profile'
 
 export function Topbar() {
   const [query, setQuery] = React.useState('')
@@ -27,21 +28,73 @@ export function Topbar() {
   }, [])
 
   React.useEffect(() => {
-    // fetch the signed-in user's name and avatar (client-side)
-    try {
-      const supabase = createClient()
-      supabase.auth.getUser().then((res) => {
-        const user = (res as any)?.data?.user
-        if (user) {
-          const meta = (user.user_metadata as any) || {}
-          const full = meta.full_name || meta.name || meta.first_name || user.email || ''
-          const first = (full || '').toString().split(' ')[0] || null
-          setFirstName(first)
-          const avatar = meta.avatar_url || meta.avatar || null
-          setAvatarUrl(avatar)
+    // Try to read the profile row by auth_id first (non-destructive). If not found,
+    // fall back to ensureProfile() which will upsert a profile safely.
+    let mounted = true
+    ;(async () => {
+      try {
+        const supabase = createClient()
+        const { data: userData } = await supabase.auth.getUser()
+        const user = (userData as any)?.user
+        if (!user) return
+
+        // Try to select profile by auth_id
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('auth_id', user.id)
+            .single()
+
+          if (!mounted) return
+
+          if (profileError) {
+            // Could be table missing or RLS blocking - fall back to ensureProfile
+            const profile = await ensureProfile()
+            if (!mounted) return
+            if (profile) {
+              setFirstName(profile.first_name || (profile.display_name || profile.email || '').toString().split(' ')[0] || null)
+              setAvatarUrl(profile.avatar_url || null)
+            } else {
+              // Final fallback to user metadata
+              const meta = (user.user_metadata as any) || {}
+              const full = meta.full_name || meta.name || meta.first_name || user.email || ''
+              const first = (full || '').toString().split(' ')[0] || null
+              setFirstName(first)
+              setAvatarUrl(meta.avatar_url || meta.avatar || null)
+            }
+          } else if (profileData) {
+            setFirstName(profileData.first_name || (profileData.display_name || profileData.email || '').toString().split(' ')[0] || null)
+            setAvatarUrl(profileData.avatar_url || null)
+          } else {
+            // No profile row found - create one
+            const profile = await ensureProfile()
+            if (!mounted) return
+            if (profile) {
+              setFirstName(profile.first_name || (profile.display_name || profile.email || '').toString().split(' ')[0] || null)
+              setAvatarUrl(profile.avatar_url || null)
+            }
+          }
+        } catch (err) {
+          // On any unexpected error, attempt ensureProfile and fallback to user metadata
+          const profile = await ensureProfile()
+          if (!mounted) return
+          if (profile) {
+            setFirstName(profile.first_name || (profile.display_name || profile.email || '').toString().split(' ')[0] || null)
+            setAvatarUrl(profile.avatar_url || null)
+          } else {
+            const meta = (user.user_metadata as any) || {}
+            const full = meta.full_name || meta.name || meta.first_name || user.email || ''
+            const first = (full || '').toString().split(' ')[0] || null
+            setFirstName(first)
+            setAvatarUrl(meta.avatar_url || meta.avatar || null)
+          }
         }
-      }).catch(() => {})
-    } catch {}
+      } catch (e) {
+        // ignore
+      }
+    })()
+    return () => { mounted = false }
   }, [])
 
   const onChange = (value: string) => {
