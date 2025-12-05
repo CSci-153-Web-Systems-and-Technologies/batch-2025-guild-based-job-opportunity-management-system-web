@@ -1,9 +1,7 @@
 "use client"
 
 import * as React from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
-import { Button } from '@/components/ui/button'
 import SearchIcon from '@/assets/icons/search.png'
 import NotificationIcon from '@/assets/icons/notification.png'
 import { createClient } from '@/lib/client'
@@ -123,9 +121,13 @@ export function Topbar() {
   }
 
   return (
-    <div className="flex items-center justify-end py-4 px-6 border-b border-border bg-transparent">
+    <div className="flex items-center justify-between py-4 px-6 border-b border-border bg-transparent">
+      {/* Left: greeting */}
+      <div className="flex items-center">
+        <span className="text-3xl font-bold text-[#6EE7B7]">Good morning,&nbsp;</span>
+        <span className="text-3xl font-bold text-white">{firstName || 'User'}</span>
+      </div>
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-semibold">Dashboard</h1>
         <div className="relative">
           <input
             aria-label="Search"
@@ -144,7 +146,7 @@ export function Topbar() {
               focus:outline-none
               bg-white/10 
               border border-white/20 
-              shadow-[0_8px_20px_rgba(0,0,0,0.25)]
+              shadow-[0_4px_8px_rgba(0,0,0,0.25)]
               backdrop-blur-md
               relative z-10
             "
@@ -170,7 +172,7 @@ export function Topbar() {
         <button
           aria-label="Notifications"
           title="Notifications"
-          className="w-12 h-12 relative p-2 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.25)] backdrop-blur-md flex items-center justify-center"
+          className="w-12 h-12 relative p-2 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_4px_8px_rgba(0,0,0,0.25)] backdrop-blur-md flex items-center justify-center"
           style={{
             background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))",
             WebkitBackdropFilter: "blur(8px)",
