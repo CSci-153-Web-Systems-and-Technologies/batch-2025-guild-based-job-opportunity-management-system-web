@@ -34,13 +34,32 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
       if (error) throw error
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push('/protected')
+
+      // Sync server-side cookies so middleware and SSR can see the session.
+      const session = signInData?.session
+      if (session?.access_token && session?.refresh_token) {
+        try {
+          await fetch('/api/auth/sync-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+            }),
+          })
+        } catch (err) {
+          // Non-fatal: if cookie sync fails the client will still have a local session
+          console.error('Failed to sync session to server', err)
+        }
+      }
+
+      // Redirect to dashboard after successful login.
+      router.push('/dashboard')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
