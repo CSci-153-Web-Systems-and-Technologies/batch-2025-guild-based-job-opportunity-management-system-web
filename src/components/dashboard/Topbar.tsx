@@ -6,11 +6,14 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import SearchIcon from '@/assets/icons/search.png'
 import NotificationIcon from '@/assets/icons/notification.png'
+import { createClient } from '@/lib/client'
 
 export function Topbar() {
   const [query, setQuery] = React.useState('')
   const [focused, setFocused] = React.useState(false)
   const [notifCount, setNotifCount] = React.useState(3)
+  const [firstName, setFirstName] = React.useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null)
   const debounceRef = React.useRef<number | null>(null)
 
   React.useEffect(() => {
@@ -21,6 +24,24 @@ export function Topbar() {
     } catch {
 
     }
+  }, [])
+
+  React.useEffect(() => {
+    // fetch the signed-in user's name and avatar (client-side)
+    try {
+      const supabase = createClient()
+      supabase.auth.getUser().then((res) => {
+        const user = (res as any)?.data?.user
+        if (user) {
+          const meta = (user.user_metadata as any) || {}
+          const full = meta.full_name || meta.name || meta.first_name || user.email || ''
+          const first = (full || '').toString().split(' ')[0] || null
+          setFirstName(first)
+          const avatar = meta.avatar_url || meta.avatar || null
+          setAvatarUrl(avatar)
+        }
+      }).catch(() => {})
+    } catch {}
   }, [])
 
   const onChange = (value: string) => {
@@ -109,6 +130,29 @@ export function Topbar() {
               {notifCount > 99 ? '99+' : notifCount}
             </span>
           ) : null}
+        </button>
+        <button
+          aria-label="Profile"
+          title={firstName ? `${firstName}'s profile` : 'Profile'}
+          className="ml-2 flex items-center gap-3 px-3 h-12 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.25)] backdrop-blur-md"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))",
+            WebkitBackdropFilter: "blur(8px)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          {avatarUrl ? (
+            // use next/image for local/static avatars, otherwise fallback to img if external
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-white/5 flex items-center justify-center">
+              <Image src={avatarUrl} alt="Profile" width={32} height={32} className="object-cover" />
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold text-white">
+              {firstName ? firstName[0].toUpperCase() : 'U'}
+            </div>
+          )}
+
+          <span className="text-sm font-medium text-white/90">{firstName || 'User'}</span>
         </button>
       </div>
     </div>
