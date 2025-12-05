@@ -5,29 +5,29 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import SearchIcon from '@/assets/icons/search.png'
+import NotificationIcon from '@/assets/icons/notification.png'
 
 export function Topbar() {
   const [query, setQuery] = React.useState('')
   const [focused, setFocused] = React.useState(false)
+  const [notifCount, setNotifCount] = React.useState(3)
   const debounceRef = React.useRef<number | null>(null)
 
   React.useEffect(() => {
-    // initialize from URL if present
     try {
       const url = new URL(window.location.href)
       const q = url.searchParams.get('q') || ''
       setQuery(q)
     } catch {
-      // ignore
+
     }
   }, [])
 
   const onChange = (value: string) => {
     setQuery(value)
 
-    // debounce update of URL
     if (debounceRef.current) window.clearTimeout(debounceRef.current)
-    // @ts-ignore setTimeout returns number in browser
+
     debounceRef.current = window.setTimeout(() => {
       try {
         const url = new URL(window.location.href)
@@ -35,7 +35,6 @@ export function Topbar() {
         else url.searchParams.delete('q')
         window.history.replaceState({}, '', url.toString())
       } catch {
-        // ignore
       }
     }, 350)
   }
@@ -94,10 +93,23 @@ export function Topbar() {
             <button onClick={clear} className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-white/70 bg-white/6 hover:bg-white/10 rounded-full w-6 h-6 flex items-center justify-center">✕</button>
           ) : null}
         </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <Link href="/" className="text-sm underline">Home</Link>
-        <Button variant="ghost">Settings</Button>
+        <button
+          aria-label="Notifications"
+          title="Notifications"
+          className="w-12 h-12 relative p-2 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.25)] backdrop-blur-md flex items-center justify-center"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))",
+            WebkitBackdropFilter: "blur(8px)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <Image src={NotificationIcon} alt="Notifications" width={20} height={20} className="object-contain" />
+          {notifCount > 0 ? (
+            <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-[10px] font-semibold text-white border border-white/20">
+              {notifCount > 99 ? '99+' : notifCount}
+            </span>
+          ) : null}
+        </button>
       </div>
     </div>
   )
