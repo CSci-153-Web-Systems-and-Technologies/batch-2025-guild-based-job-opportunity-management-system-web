@@ -127,7 +127,7 @@ export function Topbar() {
         <span className="text-3xl font-bold text-[#6EE7B7]">Good morning,&nbsp;</span>
         <span className="text-3xl font-bold text-white">{firstName || 'User'}</span>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 transform">
         <div className="relative">
           <input
             aria-label="Search"
@@ -137,7 +137,7 @@ export function Topbar() {
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             className="
-              w-100
+              w-120
               h-12
               pl-10 pr-10 py-2 
               rounded-full 
@@ -189,7 +189,7 @@ export function Topbar() {
         <button
           aria-label="Profile"
           title={firstName ? `${firstName}'s profile` : 'Profile'}
-          className="ml-2 flex items-center gap-3 px-3 h-12 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.25)] backdrop-blur-md"
+          className="ml-2 flex items-center gap-3 px-3 h-12 w-40 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.25)] backdrop-blur-md"
           style={{
             background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))",
             WebkitBackdropFilter: "blur(8px)",
