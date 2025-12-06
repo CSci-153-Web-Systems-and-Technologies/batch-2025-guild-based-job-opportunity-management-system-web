@@ -58,6 +58,34 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         }
       }
 
+      // Best-effort: after successful login, attempt to upsert the user's profile via server
+      // route which uses the Supabase service role key. This ensures profiles are created
+      // even when client-side RLS prevents direct upserts.
+      try {
+        const supabaseClient = createClient(remember)
+        const { data: userData } = await supabaseClient.auth.getUser()
+        const user = (userData as any)?.user
+        if (user) {
+          const payload = {
+            auth_id: user.id,
+            email: user.email ?? null,
+            first_name: (user.user_metadata as any)?.first_name ?? null,
+            last_name: (user.user_metadata as any)?.last_name ?? null,
+          }
+
+          // call server-side upsert endpoint
+          await fetch('/api/profiles/upsert', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+        }
+      } catch (err) {
+        // Non-fatal: log for debugging
+        // eslint-disable-next-line no-console
+        console.warn('profile upsert (post-login) failed:', err)
+      }
+
       // Redirect to dashboard after successful login.
       router.push('/dashboard')
     } catch (error: unknown) {

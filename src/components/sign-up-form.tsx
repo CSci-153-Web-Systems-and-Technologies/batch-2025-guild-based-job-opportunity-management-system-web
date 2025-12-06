@@ -21,6 +21,8 @@ import styles from './login-form.module.css'
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -39,14 +41,55 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/protected`,
+          data: {
+            first_name: firstName || undefined,
+            last_name: lastName || undefined,
+          },
         },
       })
       if (error) throw error
+
+      // If the signUp returned a user (some flows return user/session immediately),
+      // attempt a best-effort client-side upsert into `profiles` so names are stored.
+      const user = (data as any)?.user
+      if (user) {
+        try {
+          await supabase.from('profiles').upsert({
+            auth_id: user.id,
+            email: user.email ?? email,
+            first_name: firstName || null,
+            last_name: lastName || null,
+          })
+        } catch (upsertErr) {
+          // Don't block sign-up flow on the upsert; log for debugging.
+          // eslint-disable-next-line no-console
+          console.warn('profiles upsert failed:', upsertErr)
+        }
+        // Also call the server-side upsert endpoint which uses the service role key
+        // to guarantee the profile is created even if client RLS prevents it.
+        try {
+          await fetch('/api/profiles/upsert', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              auth_id: user.id,
+              email: user.email ?? email,
+              first_name: firstName || null,
+              last_name: lastName || null,
+            }),
+          })
+        } catch (svcErr) {
+          // Non-fatal: log for debugging
+          // eslint-disable-next-line no-console
+          console.warn('server profiles upsert failed:', svcErr)
+        }
+      }
+
       router.push('/auth/sign-up-success')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
@@ -78,6 +121,30 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="first-name">First Name</Label>
+                  <Input
+                    id="first-name"
+                    type="text"
+                    placeholder="First name"
+                    required
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="last-name">Last Name</Label>
+                  <Input
+                    id="last-name"
+                    type="text"
+                    placeholder="Last name"
+                    required
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </div>
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
