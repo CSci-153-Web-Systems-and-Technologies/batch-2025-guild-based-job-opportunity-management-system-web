@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 export async function POST(req: Request) {
   try {
@@ -10,14 +10,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'auth_id is required' }, { status: 400 })
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    if (!serviceKey) {
+    if (!supabaseUrl || !serviceKey) {
       return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 })
     }
 
-    const supabase = createClient(supabaseUrl, serviceKey)
+    const supabase = createSupabaseClient(supabaseUrl, serviceKey)
 
     // Validate that the provided auth_id corresponds to an existing auth user.
     try {
