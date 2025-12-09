@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/client'
 import { ensureProfile } from '@/lib/profile'
 import UserStatsSection from './UserStatsSection'
+import LevelProgressBar from './LevelProgressBar'
 
 export function WelcomeSection() {
   const [firstName, setFirstName] = React.useState<string | null>(null)
@@ -108,6 +109,9 @@ export function WelcomeSection() {
 
       {/* User Stats */}
       <UserStatsSection />
+
+      {/* Level Progress Bar */}
+      <LevelProgressBar />
     </div>
   )
 }
