@@ -1,5 +1,6 @@
 import React from 'react'
 import Topbar from '@/components/dashboard/Topbar'
+import WelcomeSection from '@/components/dashboard/WelcomeSection'
 import WidgetCard from '@/components/dashboard/WidgetCard'
 import { createClient as createServerClient } from '@/lib/server'
 
@@ -46,6 +47,8 @@ export default async function DashboardPage() {
   return (
     <main className="p-6">
       <Topbar />
+
+      <WelcomeSection />
 
       <section className="mt-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
