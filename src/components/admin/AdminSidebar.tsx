@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils'
 import Logo from '@/assets/icons/logo.png'
 import DashboardIcon from '@/assets/icons/dashboard.png'
 import QuestBoardIcon from '@/assets/icons/quest-board.png'
+import PartyIcon from '@/assets/icons/party.png'
+import LeaderboardIcon from '@/assets/icons/leaderboard.png'
 import LogoutIcon from '@/assets/icons/logout.png'
 
 function NavItem({ href, label, children, active }: { href: string; label: string; children: React.ReactNode; active?: boolean }) {
@@ -51,19 +53,24 @@ export function AdminSidebar() {
       {/* Middle: navigation items */}
       <div className="flex-1 flex flex-col justify-center">
         <nav className="flex flex-col items-center gap-7">
-          <NavItem href="/admin" label="Dashboard" active={pathname === '/admin' || pathname?.startsWith('/admin/(dashboard)')}>
+          <NavItem href="/dashboard" label="Dashboard" active={pathname?.startsWith('/dashboard')}>
             {/* dashboard icon */}
             <Image src={DashboardIcon} alt="Dashboard" width={22} height={22} className="object-contain" />
           </NavItem>
 
-          <NavItem href="/admin/jobs" label="Manage Jobs" active={pathname?.startsWith('/admin/jobs')}>
-            {/* jobs icon - reusing quest-board icon for consistency */}
-            <Image src={QuestBoardIcon} alt="Manage Jobs" width={22} height={22} className="object-contain" />
+          <NavItem href="/questboard" label="Questboard" active={pathname?.startsWith('/questboard')}>
+            {/* questboard icon */}
+            <Image src={QuestBoardIcon} alt="Questboard" width={22} height={22} className="object-contain" />
           </NavItem>
 
-          <NavItem href="/admin/invite" label="Invite Admin" active={pathname?.startsWith('/admin/invite')}>
-            {/* invite icon - reusing dashboard icon variant */}
-            <Image src={DashboardIcon} alt="Invite Admin" width={22} height={22} className="object-contain opacity-75" />
+          <NavItem href="/party-management" label="Party Management" active={pathname?.startsWith('/party-management')}>
+            {/* party icon */}
+            <Image src={PartyIcon} alt="Party Management" width={22} height={22} className="object-contain" />
+          </NavItem>
+
+          <NavItem href="/leaderboard" label="Leaderboard" active={pathname?.startsWith('/leaderboard')}>
+            {/* leaderboard icon */}
+            <Image src={LeaderboardIcon} alt="Leaderboard" width={22} height={22} className="object-contain" />
           </NavItem>
         </nav>
       </div>
