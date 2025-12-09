@@ -58,7 +58,7 @@ export function UserStatsSection() {
   }, [])
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 py-2">
+    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 py-0">
       {/* Ranking Badge */}
       <div className="flex flex-col items-center gap-1">
         <div className="bg-gradient-to-r from-[#67E8F9]/20 to-[#67E8F9]/20 border border-[#67E8F9]/40 rounded-full px-3 py-1 backdrop-blur-sm shadow-md shadow-[#000000]/50">
