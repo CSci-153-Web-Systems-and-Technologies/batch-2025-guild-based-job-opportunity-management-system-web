@@ -9,8 +9,6 @@ import { cn } from '@/lib/utils'
 import Logo from '@/assets/icons/logo.png'
 import DashboardIcon from '@/assets/icons/dashboard.png'
 import QuestBoardIcon from '@/assets/icons/quest-board.png'
-import PartyIcon from '@/assets/icons/party.png'
-import LeaderboardIcon from '@/assets/icons/leaderboard.png'
 import LogoutIcon from '@/assets/icons/logout.png'
 
 function NavItem({ href, label, children, active }: { href: string; label: string; children: React.ReactNode; active?: boolean }) {
@@ -30,7 +28,7 @@ function NavItem({ href, label, children, active }: { href: string; label: strin
   )
 }
 
-export function Sidebar() {
+export function AdminSidebar() {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -45,32 +43,27 @@ export function Sidebar() {
     <aside className="fixed left-4 top-4 w-17 h-[calc(100vh-2rem)] bg-[#081A21] rounded-3xl p-4 hidden md:flex flex-col overflow-hidden z-50">
       {/* Top: logo */}
       <div className="flex-none mb-6 flex items-center justify-center">
-        <Link href="/">
+        <Link href="/admin">
           <Image src={Logo} alt="Logo" width={35} height={35} className="block" />
         </Link>
       </div>
 
-      {}
+      {/* Middle: navigation items */}
       <div className="flex-1 flex flex-col justify-center">
         <nav className="flex flex-col items-center gap-7">
-          <NavItem href="/dashboard" label="Dashboard" active={pathname?.startsWith('/dashboard')}>
+          <NavItem href="/admin" label="Dashboard" active={pathname === '/admin' || pathname?.startsWith('/admin/(dashboard)')}>
             {/* dashboard icon */}
             <Image src={DashboardIcon} alt="Dashboard" width={22} height={22} className="object-contain" />
           </NavItem>
 
-          <NavItem href="/questboard" label="Questboard" active={pathname?.startsWith('/questboard')}>
-            {/* questboard icon */}
-            <Image src={QuestBoardIcon} alt="Questboard" width={22} height={22} className="object-contain" />
+          <NavItem href="/admin/jobs" label="Manage Jobs" active={pathname?.startsWith('/admin/jobs')}>
+            {/* jobs icon - reusing quest-board icon for consistency */}
+            <Image src={QuestBoardIcon} alt="Manage Jobs" width={22} height={22} className="object-contain" />
           </NavItem>
 
-          <NavItem href="/party-management" label="Party Management" active={pathname?.startsWith('/party-management')}>
-            {/* party icon */}
-            <Image src={PartyIcon} alt="Party Management" width={22} height={22} className="object-contain" />
-          </NavItem>
-
-          <NavItem href="/leaderboard" label="Leaderboard" active={pathname?.startsWith('/leaderboard')}>
-            {/* leaderboard icon */}
-            <Image src={LeaderboardIcon} alt="Leaderboard" width={22} height={22} className="object-contain" />
+          <NavItem href="/admin/invite" label="Invite Admin" active={pathname?.startsWith('/admin/invite')}>
+            {/* invite icon - reusing dashboard icon variant */}
+            <Image src={DashboardIcon} alt="Invite Admin" width={22} height={22} className="object-contain opacity-75" />
           </NavItem>
         </nav>
       </div>
@@ -82,8 +75,8 @@ export function Sidebar() {
           <span className="sr-only">Logout</span>
         </button>
       </div>
-
     </aside>
   )
 }
-export default Sidebar
+
+export default AdminSidebar

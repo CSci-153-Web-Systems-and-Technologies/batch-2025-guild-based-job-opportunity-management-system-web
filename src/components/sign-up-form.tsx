@@ -40,13 +40,15 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
       return
     }
 
-    try {
+      try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
+            // Force the role to 'student' on sign-up (do not allow choosing role)
+            role: 'student',
             first_name: firstName || undefined,
             last_name: lastName || undefined,
           },
@@ -57,13 +59,14 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
       // If the signUp returned a user (some flows return user/session immediately),
       // attempt a best-effort client-side upsert into `profiles` so names are stored.
       const user = (data as any)?.user
-      if (user) {
+        if (user) {
         try {
           await supabase.from('profiles').upsert({
             auth_id: user.id,
             email: user.email ?? email,
             first_name: firstName || null,
             last_name: lastName || null,
+            role: 'student',
           })
         } catch (upsertErr) {
           // Don't block sign-up flow on the upsert; log for debugging.
@@ -81,6 +84,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
               email: user.email ?? email,
               first_name: firstName || null,
               last_name: lastName || null,
+              role: 'student',
             }),
           })
         } catch (svcErr) {

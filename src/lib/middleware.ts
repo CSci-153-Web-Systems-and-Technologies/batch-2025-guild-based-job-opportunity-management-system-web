@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
@@ -35,18 +36,87 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: If you remove getClaims() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
-  const { data } = await supabase.auth.getClaims()
-  const user = data?.claims
+  // Get JWT claims and session. We use both so we can read lightweight claims
+  // and also inspect the session's `user.user_metadata` for the role.
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const claims = claimsData?.claims
 
+  const { data: sessionData } = await supabase.auth.getSession()
+  const session = sessionData?.session
+
+  // If there's no authenticated user and we're not on auth pages, redirect
   if (
-    !user &&
+    !claims &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth')
   ) {
-    // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)
+  }
+
+  // If this is an admin route, enforce admin role
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    // Allow anyone logged in to access the invite page so they can submit a
+    // code and be promoted to admin. If not logged in, redirect to login.
+    if (request.nextUrl.pathname.startsWith('/admin/invite')) {
+      if (!session) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/auth/login'
+        return NextResponse.redirect(url)
+      }
+
+      return supabaseResponse
+    }
+    // Ensure there's an authenticated session
+    if (!session) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth/login'
+      return NextResponse.redirect(url)
+    }
+
+    let role = (session.user.user_metadata as any)?.role ?? 'student'
+
+    // If the user's session metadata hasn't been updated yet, fall back to
+    // checking the `profiles` table using the service role key. This allows
+    // immediate access after server-side promotions without requiring the
+    // user to re-authenticate.
+    if (role !== 'admin') {
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (serviceKey && url) {
+        try {
+          const svc = createServiceClient(url, serviceKey)
+          const { data: profile } = await svc
+            .from('profiles')
+            .select('role')
+            .or(`auth_id.eq.${session.user.id},user_id.eq.${session.user.id}`)
+            .maybeSingle()
+
+          if (process.env.NODE_ENV !== 'production') {
+            // Debug output to help diagnose unexpected access during development
+            // eslint-disable-next-line no-console
+            console.debug('[middleware] session.user.id=', session.user.id)
+            // eslint-disable-next-line no-console
+            console.debug('[middleware] session.user.user_metadata.role=', (session.user.user_metadata as any)?.role)
+            // eslint-disable-next-line no-console
+            console.debug('[middleware] profile.role=', (profile as any)?.role)
+          }
+
+          if (profile && (profile as any).role === 'admin') {
+            role = 'admin'
+          }
+        } catch (e) {
+          // ignore and fall through to unauthorized below
+        }
+      }
+
+      if (role !== 'admin') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/unauthorized'
+        return NextResponse.redirect(url)
+      }
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
