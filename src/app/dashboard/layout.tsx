@@ -22,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       className="min-h-screen flex bg-gradient-to-br from-[#081A21] via-[#0d2635] to-[#164557]"
     >
       {/* Sidebar (hidden on small screens) */}
-      <Sidebar />
+      <Sidebar userRole="user" />
 
       <div className="flex-1 min-h-screen md:ml-[calc(68px+2rem)]">
         {/* main content area (Topbar will be inside pages) */}
