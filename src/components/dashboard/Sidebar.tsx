@@ -57,7 +57,7 @@ export function Sidebar({ userRole = 'user' }: SidebarProps) {
 
   const navItems: NavItem[] = userRole === 'admin'
     ? [
-        { href: '/admin/dashboard', label: 'Dashboard', icon: DashboardIcon },
+        { href: '/admin', label: 'Dashboard', icon: DashboardIcon },
         { href: '/admin/jobs', label: 'Manage Jobs', icon: QuestBoardIcon },
         { href: '/admin/invite', label: 'Invite Users', icon: PartyIcon },
         { href: '/leaderboard', label: 'Leaderboard', icon: LeaderboardIcon },
@@ -76,12 +76,23 @@ export function Sidebar({ userRole = 'user' }: SidebarProps) {
     router.push('/auth/login')
   }
 
-  const isActive = (href: string) => {
-    if (href === '/dashboard' || href === '/admin/dashboard') {
-      return pathname?.startsWith(href)
+  // Determine the single best-matching nav href for the current pathname.
+  // This prefers the longest matching prefix so `/admin/jobs` wins over `/admin`.
+  const getActiveHref = () => {
+    if (!pathname) return null
+    let best: string | null = null
+    for (const item of navItems) {
+      if (pathname.startsWith(item.href)) {
+        if (best === null || item.href.length > best.length) {
+          best = item.href
+        }
+      }
     }
-    return pathname?.startsWith(href)
+    return best
   }
+
+  const activeHref = getActiveHref()
+  const isActive = (href: string) => href === activeHref
 
   return (
     <aside className="fixed left-4 top-4 w-17 h-[calc(100vh-2rem)] bg-[#0f3a47] rounded-3xl p-4 hidden md:flex flex-col overflow-hidden z-50">
