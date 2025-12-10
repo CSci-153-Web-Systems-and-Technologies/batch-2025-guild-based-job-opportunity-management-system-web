@@ -17,8 +17,9 @@ async function getJob(id: string) {
   }
 }
 
-export default async function Page({ params }: { params: { id: string } }) {
-  const res = await getJob(params.id)
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const res = await getJob(id)
   const job = res.data
   const fetchError = res.error
 
@@ -48,7 +49,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         ) : null}
 
         {/* Form */}
-        <JobForm initial={job} actionUrl={`/api/admin/jobs/${params.id}`} method="PATCH" />
+        <JobForm initial={job} actionUrl={`/api/admin/jobs/${id}`} method="PATCH" />
 
         {/* Delete Section */}
         {job ? (
@@ -58,7 +59,7 @@ export default async function Page({ params }: { params: { id: string } }) {
                 <h3 className="text-lg font-semibold text-white mb-2">Danger Zone</h3>
                 <p className="text-white/60 text-sm">Permanently delete this job opportunity</p>
               </div>
-              <DeleteJobButton jobId={params.id} />
+              <DeleteJobButton jobId={id} />
             </div>
           </div>
         ) : null}

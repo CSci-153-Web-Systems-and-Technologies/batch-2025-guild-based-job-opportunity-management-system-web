@@ -1,5 +1,5 @@
 import React from 'react'
-import AdminSidebar from '@/components/admin/AdminSidebar'
+import Sidebar from '@/components/dashboard/Sidebar'
 import { createClient as createServerClient } from '@/lib/server'
 import { redirect } from 'next/navigation'
 
@@ -22,7 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       className="min-h-screen flex bg-gradient-to-br from-[#081A21] via-[#0d2635] to-[#164557]"
     >
       {/* Sidebar (fixed, hidden on small screens) */}
-      <AdminSidebar />
+      <Sidebar userRole="admin" />
 
       <div className="flex-1 min-h-screen md:ml-[calc(68px+2rem)]">
         {/* main content area (Topbar will be inside pages) */}
