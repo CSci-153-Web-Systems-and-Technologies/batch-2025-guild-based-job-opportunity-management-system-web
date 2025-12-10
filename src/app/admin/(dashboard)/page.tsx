@@ -1,5 +1,6 @@
 import React from 'react'
 import Topbar from '@/components/dashboard/Topbar'
+import WelcomeSection from '@/components/dashboard/WelcomeSection'
 import WidgetCard from '@/components/dashboard/WidgetCard'
 import Link from 'next/link'
 import { createClient as createServerClient } from '@/lib/server'
@@ -52,6 +53,8 @@ export default async function AdminDashboard() {
   return (
     <main className="p-6">
       <Topbar />
+
+      <WelcomeSection />
 
       <div className="mt-6">
         {/* Header Section */}
