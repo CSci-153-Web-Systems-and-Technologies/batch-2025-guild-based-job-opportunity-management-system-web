@@ -6,11 +6,17 @@ import { createClient } from '@/lib/client'
 import { ensureProfile } from '@/lib/profile'
 import UserStatsSection from './UserStatsSection'
 import LevelProgressBar from './LevelProgressBar'
+import { SummaryCard } from './SummaryCard'
+import questBoardIcon from '@/assets/icons/quest-board.png'
+import partyIcon from '@/assets/icons/party.png'
+import targetIcon from '@/assets/icons/target.png'
 
 export function WelcomeSection() {
   const [firstName, setFirstName] = React.useState<string | null>(null)
   const [lastName, setLastName] = React.useState<string | null>(null)
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null)
+  const [rank, setRank] = React.useState<string>('Beginner Adventurer')
+  const [experience, setExperience] = React.useState<number>(0)
 
   React.useEffect(() => {
     let mounted = true
@@ -48,6 +54,8 @@ export function WelcomeSection() {
             setFirstName(profileData.first_name || null)
             setLastName(profileData.last_name || null)
             setAvatarUrl(profileData.avatar_url || null)
+            setRank(profileData.rank || 'Beginner Adventurer')
+            setExperience(profileData.experience || 0)
           } else {
             const profile = await ensureProfile()
             if (!mounted) return
@@ -112,6 +120,32 @@ export function WelcomeSection() {
 
       {/* Level Progress Bar */}
       <LevelProgressBar />
+
+      {/* Summary Cards */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
+        <SummaryCard rank={rank} experience={experience} />
+        <SummaryCard 
+          title="Finished"
+          titleLine2="Jobs"
+          value="3"
+          subtitle="total tasks"
+          icon={questBoardIcon}
+        />
+        <SummaryCard 
+          title="Available"
+          titleLine2="Parties"
+          value="7"
+          subtitle="total parties available"
+          icon={partyIcon}
+        />
+        <SummaryCard 
+          title="Open"
+          titleLine2="Quests"
+          value="4"
+          subtitle="available opportunities"
+          icon={targetIcon}
+        />
+      </div>
     </div>
   )
 }

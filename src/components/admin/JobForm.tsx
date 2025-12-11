@@ -13,20 +13,21 @@ type Job = {
 }
 
 export default function JobForm({
-  initial = {},
+  initial,
   actionUrl,
   method = 'POST',
 }: {
-  initial?: Job
+  initial?: Job | null
   actionUrl: string
   method?: 'POST' | 'PATCH' | 'PUT'
 }) {
   const router = useRouter()
-  const [title, setTitle] = React.useState(initial.title ?? '')
-  const [description, setDescription] = React.useState(initial.description ?? '')
-  const [category, setCategory] = React.useState(initial.category ?? '')
-  const [rewardXp, setRewardXp] = React.useState(String(initial.reward_xp ?? '0'))
-  const [slots, setSlots] = React.useState(String(initial.slots ?? '1'))
+  const safeInitial = initial ?? {}
+  const [title, setTitle] = React.useState(safeInitial.title ?? '')
+  const [description, setDescription] = React.useState(safeInitial.description ?? '')
+  const [category, setCategory] = React.useState(safeInitial.category ?? '')
+  const [rewardXp, setRewardXp] = React.useState(String(safeInitial.reward_xp ?? '0'))
+  const [slots, setSlots] = React.useState(String(safeInitial.slots ?? '1'))
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [success, setSuccess] = React.useState<string | null>(null)
