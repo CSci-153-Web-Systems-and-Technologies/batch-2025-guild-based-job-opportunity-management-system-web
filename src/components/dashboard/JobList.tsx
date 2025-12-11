@@ -36,7 +36,7 @@ export default function JobList() {
   if (jobs.length === 0) return <div className="text-white/60">No jobs found</div>
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div className="flex flex-col sm:flex-row gap-4 justify-left flex-wrap">
       {jobs.map((job: any) => {
         const postedDate = new Date(job.created_at)
         const daysAgo = Math.floor((Date.now() - postedDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -49,7 +49,7 @@ export default function JobList() {
             company={job.company_name || job.company || 'Company'}
             location={job.location || 'Location TBA'}
             description={job.description || ''}
-            categories={job.categories ? job.categories.split(',').map((c: string) => c.trim()) : []}
+            categories={job.category ? [job.category] : []}
             pay={job.pay || 0}
             postedDaysAgo={daysAgo}
             companyLogo={job.company_logo_url || undefined}
