@@ -10,9 +10,9 @@ export default async function DashboardPage() {
 
       <WelcomeSection />
 
-      {/* Available Jobs Section (client fetch) */}
+      {/* Available Quests Section (client fetch) */}
       <section className="mt-8">
-        <h2 className="text-2xl font-bold text-white mb-4">Available Jobs</h2>
+        <h2 className="text-2xl font-bold text-white mb-4">Available Quests</h2>
         <JobList />
       </section>
     </main>
