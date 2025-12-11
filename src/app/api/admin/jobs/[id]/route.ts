@@ -8,11 +8,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try {
     const { id } = await params
     const body = await req.json()
-    const { title, description, category, reward_xp, slots } = body || {}
+    const { title, description, category, reward_xp, slots, pay, location } = body || {}
 
     if (!supabaseUrl || !serviceKey) return NextResponse.json({ error: 'Missing SUPABASE env vars' }, { status: 500 })
     const supabase = createSupabaseClient(supabaseUrl, serviceKey)
-    const { data, error } = await supabase.from('jobs').update({ title, description, category, reward_xp: reward_xp ?? 0, slots: slots ?? 0 }).eq('id', id).select('*')
+    const { data, error } = await supabase.from('jobs').update({ title, description, category, reward_xp: reward_xp ?? 0, slots: slots ?? 0, pay: pay ?? 0, location: location ?? '' }).eq('id', id).select('*')
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ data })
