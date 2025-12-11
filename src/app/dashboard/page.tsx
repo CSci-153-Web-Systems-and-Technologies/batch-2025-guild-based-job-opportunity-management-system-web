@@ -2,6 +2,7 @@ import React from 'react'
 import Topbar from '@/components/dashboard/Topbar'
 import WelcomeSection from '@/components/dashboard/WelcomeSection'
 import WidgetCard from '@/components/dashboard/WidgetCard'
+import { JobCard } from '@/components/dashboard/JobCard'
 import { createClient as createServerClient } from '@/lib/server'
 
 export default async function DashboardPage() {
@@ -44,6 +45,15 @@ export default async function DashboardPage() {
     { id: 'w6', title: 'New Guild Members', value: newGuildMembersCount ?? 0 },
   ]
 
+  // Fetch recent job opportunities
+  const { data: jobsData } = await supabase
+    .from('opportunities')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(6)
+
+  const jobs = jobsData || []
+
   return (
     <main className="p-6">
       <Topbar />
@@ -55,6 +65,31 @@ export default async function DashboardPage() {
           {widgets.map((w) => (
             <WidgetCard key={w.id} widget={w} />
           ))}
+        </div>
+      </section>
+
+      {/* Available Jobs Section */}
+      <section className="mt-8">
+        <h2 className="text-2xl font-bold text-white mb-4">Available Jobs</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {jobs.map((job: any) => {
+            const postedDate = new Date(job.created_at)
+            const daysAgo = Math.floor((Date.now() - postedDate.getTime()) / (1000 * 60 * 60 * 24))
+            
+            return (
+              <JobCard
+                key={job.id}
+                id={job.id}
+                title={job.title}
+                company={job.company_name || 'Company'}
+                location={job.location || 'Location TBA'}
+                description={job.description || ''}
+                categories={job.categories ? job.categories.split(',').map((c: string) => c.trim()) : []}
+                pay={job.pay || 0}
+                postedDaysAgo={daysAgo}
+              />
+            )
+          })}
         </div>
       </section>
     </main>
