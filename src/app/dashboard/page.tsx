@@ -1,6 +1,8 @@
 import React from 'react'
 import Topbar from '@/components/dashboard/Topbar'
+import WelcomeSection from '@/components/dashboard/WelcomeSection'
 import WidgetCard from '@/components/dashboard/WidgetCard'
+import JobList from '@/components/dashboard/JobList'
 import { createClient as createServerClient } from '@/lib/server'
 
 export default async function DashboardPage() {
@@ -15,7 +17,7 @@ export default async function DashboardPage() {
     .gte('last_seen', sevenDaysAgo)
 
   const { count: jobsPostedCount } = await supabase
-    .from('opportunities')
+    .from('jobs')
     .select('id', { count: 'exact' })
     .gte('created_at', sevenDaysAgo)
 
@@ -43,9 +45,13 @@ export default async function DashboardPage() {
     { id: 'w6', title: 'New Guild Members', value: newGuildMembersCount ?? 0 },
   ]
 
+  // (Client) Job list will be fetched by the JobList client component via /api/jobs
+
   return (
     <main className="p-6">
       <Topbar />
+
+      <WelcomeSection />
 
       <section className="mt-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -53,6 +59,12 @@ export default async function DashboardPage() {
             <WidgetCard key={w.id} widget={w} />
           ))}
         </div>
+      </section>
+
+      {/* Available Jobs Section (client fetch) */}
+      <section className="mt-8">
+        <h2 className="text-2xl font-bold text-white mb-4">Available Jobs</h2>
+        <JobList />
       </section>
     </main>
   )

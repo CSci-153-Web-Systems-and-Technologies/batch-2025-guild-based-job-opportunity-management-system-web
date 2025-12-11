@@ -10,23 +10,28 @@ type Job = {
   category?: string
   reward_xp?: number
   slots?: number
+  pay?: number
+  location?: string
 }
 
 export default function JobForm({
-  initial = {},
+  initial,
   actionUrl,
   method = 'POST',
 }: {
-  initial?: Job
+  initial?: Job | null
   actionUrl: string
   method?: 'POST' | 'PATCH' | 'PUT'
 }) {
   const router = useRouter()
-  const [title, setTitle] = React.useState(initial.title ?? '')
-  const [description, setDescription] = React.useState(initial.description ?? '')
-  const [category, setCategory] = React.useState(initial.category ?? '')
-  const [rewardXp, setRewardXp] = React.useState(String(initial.reward_xp ?? '0'))
-  const [slots, setSlots] = React.useState(String(initial.slots ?? '1'))
+  const safeInitial = initial ?? {}
+  const [title, setTitle] = React.useState(safeInitial.title ?? '')
+  const [description, setDescription] = React.useState(safeInitial.description ?? '')
+  const [category, setCategory] = React.useState(safeInitial.category ?? '')
+  const [rewardXp, setRewardXp] = React.useState(String(safeInitial.reward_xp ?? '0'))
+  const [slots, setSlots] = React.useState(String(safeInitial.slots ?? '1'))
+  const [pay, setPay] = React.useState(String((safeInitial as any).pay ?? '0'))
+  const [location, setLocation] = React.useState(String((safeInitial as any).location ?? ''))
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [success, setSuccess] = React.useState<string | null>(null)
@@ -50,6 +55,8 @@ export default function JobForm({
         category: category.trim(),
         reward_xp: Number(rewardXp) || 0,
         slots: Number(slots) || 0,
+        pay: Number(pay) || 0,
+        location: location.trim(),
       }
 
       const res = await fetch(actionUrl, {
@@ -102,7 +109,7 @@ export default function JobForm({
           </div>
 
           {/* Three Column Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Category */}
             <div>
               <label className="block text-sm font-semibold text-white mb-2">Category</label>
@@ -136,6 +143,29 @@ export default function JobForm({
                 min={0}
                 value={slots}
                 onChange={(e) => setSlots(e.target.value)}
+                className="w-full px-4 py-3 bg-white/5 border border-white/20 hover:border-white/40 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 rounded-lg text-white placeholder-white/40 transition-all duration-200"
+              />
+            </div>
+
+            {/* Pay */}
+            <div>
+              <label className="block text-sm font-semibold text-white mb-2">Pay</label>
+              <input
+                type="number"
+                min={0}
+                value={pay}
+                onChange={(e) => setPay(e.target.value)}
+                className="w-full px-4 py-3 bg-white/5 border border-white/20 hover:border-white/40 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 rounded-lg text-white placeholder-white/40 transition-all duration-200"
+              />
+            </div>
+
+            {/* Location */}
+            <div>
+              <label className="block text-sm font-semibold text-white mb-2">Location</label>
+              <input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g., Remote / Manila"
                 className="w-full px-4 py-3 bg-white/5 border border-white/20 hover:border-white/40 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 rounded-lg text-white placeholder-white/40 transition-all duration-200"
               />
             </div>

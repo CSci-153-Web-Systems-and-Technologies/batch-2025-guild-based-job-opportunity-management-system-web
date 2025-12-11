@@ -1,5 +1,6 @@
 import React from 'react'
 import Topbar from '@/components/dashboard/Topbar'
+import WelcomeSection from '@/components/dashboard/WelcomeSection'
 import WidgetCard from '@/components/dashboard/WidgetCard'
 import Link from 'next/link'
 import { createClient as createServerClient } from '@/lib/server'
@@ -22,7 +23,7 @@ export default async function AdminDashboard() {
     .gte('last_seen', sevenDaysAgo)
 
   const { count: jobsPostedCount } = await supabase
-    .from('opportunities')
+    .from('jobs')
     .select('id', { count: 'exact' })
     .gte('created_at', sevenDaysAgo)
 
@@ -38,7 +39,7 @@ export default async function AdminDashboard() {
     .select('id', { count: 'exact' })
     .gte('joined_at', sevenDaysAgo)
 
-  const { count: totalJobsCount } = await supabase.from('opportunities').select('id', { count: 'exact' })
+  const { count: totalJobsCount } = await supabase.from('jobs').select('id', { count: 'exact' })
 
   const widgets = [
     { id: 'w1', title: 'Active Users', value: activeUsersCount ?? 0, description: 'Last 7 days' },
@@ -52,6 +53,8 @@ export default async function AdminDashboard() {
   return (
     <main className="p-6">
       <Topbar />
+
+      <WelcomeSection />
 
       <div className="mt-6">
         {/* Header Section */}
