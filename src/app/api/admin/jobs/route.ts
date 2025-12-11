@@ -19,13 +19,13 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { title, description, category, reward_xp, slots } = body || {}
+    const { title, description, category, reward_xp, slots, pay, location } = body || {}
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 })
 
     if (!supabaseUrl || !serviceKey) return NextResponse.json({ error: 'Missing SUPABASE env vars' }, { status: 500 })
     const supabase = createSupabaseClient(supabaseUrl, serviceKey)
     const { data, error } = await supabase.from('jobs').insert([
-      { title, description, category, reward_xp: reward_xp ?? 0, slots: slots ?? 0 },
+      { title, description, category, reward_xp: reward_xp ?? 0, slots: slots ?? 0, pay: pay ?? 0, location: location ?? '' },
     ]).select('*')
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
