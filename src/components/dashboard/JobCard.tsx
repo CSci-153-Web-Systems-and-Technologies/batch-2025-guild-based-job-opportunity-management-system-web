@@ -30,11 +30,9 @@ export function JobCard({
 }: JobCardProps) {
   return (
     <div 
-      className="border border-white/20 rounded-xl flex flex-col p-6 relative overflow-hidden shadow-sm shadow-[#000000]/100 w-full"
+      className="border border-white/20 rounded-xl flex flex-col p-6 relative overflow-hidden shadow-md shadow-[#000000]/50 w-full max-w-xs"
       style={{
-        background: "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
-        WebkitBackdropFilter: "blur(10px)",
-        backdropFilter: "blur(10px)",
+        backgroundColor: "#081A21",
       }}
     >
       {/* Header with Logo and Menu */}
@@ -70,28 +68,35 @@ export function JobCard({
         {description}
       </p>
 
-      {/* Categories */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {categories.map((category) => (
-          <span 
-            key={category}
-            className="px-3 py-1 rounded-full text-xs font-medium bg-white/10 border border-white/20 text-white/80"
-          >
-            {category}
-          </span>
-        ))}
-      </div>
+      {/* Footer with Pay, Date, and Categories */}
+      <div className="mt-auto pt-4 space-y-3">
+        {/* Categories with Glassmorphism */}
+        <div className="flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <span 
+              key={category}
+              className="px-3 py-1 rounded-full text-xs font-medium text-white/90 border border-white/20"
+              style={{
+                background: "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08))",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+              }}
+            >
+              {category}
+            </span>
+          ))}
+        </div>
 
-      {/* Footer with Pay and Date */}
-      <div className="flex items-center justify-between pt-4 border-t border-white/10">
-        <div>
+        {/* Pay and Date */}
+        <div className="flex items-center gap-3">
           <p className="text-lg font-bold text-white">
             P{pay.toLocaleString()}
           </p>
+          <span className="text-white/40">•</span>
+          <p className="text-xs text-white/60">
+            {postedDaysAgo === 0 ? 'Today' : postedDaysAgo === 1 ? '1 day ago' : `${postedDaysAgo} days ago`}
+          </p>
         </div>
-        <p className="text-xs text-white/60">
-          {postedDaysAgo === 0 ? 'Today' : postedDaysAgo === 1 ? '1 day ago' : `${postedDaysAgo} days ago`}
-        </p>
       </div>
     </div>
   )
