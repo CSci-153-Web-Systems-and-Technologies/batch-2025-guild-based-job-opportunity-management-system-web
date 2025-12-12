@@ -24,14 +24,14 @@ export default function JobForm({
   method?: 'POST' | 'PATCH' | 'PUT'
 }) {
   const router = useRouter()
-  const safeInitial = initial ?? {}
+  const safeInitial: Job = initial ?? ({} as Job)
   const [title, setTitle] = React.useState(safeInitial.title ?? '')
   const [description, setDescription] = React.useState(safeInitial.description ?? '')
   const [category, setCategory] = React.useState(safeInitial.category ?? '')
   const [rewardXp, setRewardXp] = React.useState(String(safeInitial.reward_xp ?? '0'))
   const [slots, setSlots] = React.useState(String(safeInitial.slots ?? '1'))
-  const [pay, setPay] = React.useState(String((safeInitial as any).pay ?? '0'))
-  const [location, setLocation] = React.useState(String((safeInitial as any).location ?? ''))
+  const [pay, setPay] = React.useState(String(safeInitial.pay ?? '0'))
+  const [location, setLocation] = React.useState(String(safeInitial.location ?? ''))
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [success, setSuccess] = React.useState<string | null>(null)

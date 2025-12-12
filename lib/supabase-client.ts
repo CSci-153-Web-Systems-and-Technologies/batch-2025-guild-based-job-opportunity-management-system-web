@@ -1,12 +1,10 @@
-import { createClient as createBrowserClient } from '@supabase/supabase-js'
+// Thin wrapper maintained for compatibility with any imports that reference
+// the legacy root-level `lib` helpers. Delegates to the canonical implementation
+// in `src/lib/client.ts` to avoid duplicated logic.
+import { createClient as canonicalCreateClient } from '../src/lib/client'
 
 export function createSupabaseClient(remember = true) {
-  const storage = typeof window !== 'undefined' && !remember ? window.sessionStorage : undefined
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY!,
-    storage ? { auth: { storage } } : undefined
-  )
+  return canonicalCreateClient(remember)
 }
 
 export default createSupabaseClient

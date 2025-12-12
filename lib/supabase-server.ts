@@ -1,18 +1,10 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+// Thin wrapper maintained for compatibility with any imports that reference
+// the legacy root-level `lib` helpers. Delegates to the canonical implementation
+// in `src/lib/server.ts` to avoid duplicated logic.
+import { createClient as canonicalCreateServerClient } from '../src/lib/server'
 
 export async function createSupabaseServerClient() {
-  const cookieStore = await cookies()
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY!, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll()
-      },
-      setAll() {
-        // no-op here; server components should avoid setting cookies directly
-      },
-    },
-  })
+  return canonicalCreateServerClient()
 }
 
 export default createSupabaseServerClient

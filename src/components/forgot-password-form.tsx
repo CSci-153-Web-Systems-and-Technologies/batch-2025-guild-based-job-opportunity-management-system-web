@@ -14,10 +14,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useState } from 'react'
-import { motion } from 'framer-motion'
-import styles from './login-form.module.css'
+import { motion, type HTMLMotionProps } from 'framer-motion'
 
-export function ForgotPasswordForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+export function ForgotPasswordForm({ className, ...props }: HTMLMotionProps<'div'>) {
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -50,7 +49,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.995 }}
       transition={{ duration: 0.45, ease: [0.2, 0.9, 0.3, 1] }}
-      {...(props as any)}
+      {...props}
     >
       {success ? (
         <Card

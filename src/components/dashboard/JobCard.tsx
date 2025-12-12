@@ -29,6 +29,8 @@ export function JobCard({
   companyLogo,
   isBookmarked = false,
 }: JobCardProps) {
+  // `id` is intentionally unused inside the component but kept for callers/keying
+  void id
   return (
     <div 
       className="border border-white/20 rounded-xl flex flex-col p-6 relative overflow-hidden shadow-md shadow-[#000000]/50 w-full max-w-xs"

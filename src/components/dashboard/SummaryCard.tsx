@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from 'react'
-import Image from 'next/image'
+import Image, { type StaticImageData } from 'next/image'
 import crownIcon from '@/assets/icons/crown.png'
 
 interface SummaryCardProps {
@@ -9,7 +9,7 @@ interface SummaryCardProps {
   titleLine2?: string
   value?: string | number
   subtitle?: string
-  icon?: any
+  icon?: StaticImageData | string
   iconTint?: string
   rank?: string
   experience?: number
@@ -55,8 +55,8 @@ export function SummaryCard({
               style={{
                 width: 32,
                 height: 32,
-                WebkitMaskImage: `url(${(icon as any).src || icon})`,
-                maskImage: `url(${(icon as any).src || icon})`,
+                WebkitMaskImage: `url(${typeof icon === 'string' ? icon : (icon as StaticImageData).src})`,
+                maskImage: `url(${typeof icon === 'string' ? icon : (icon as StaticImageData).src})`,
                 WebkitMaskRepeat: 'no-repeat',
                 maskRepeat: 'no-repeat',
                 WebkitMaskSize: 'contain',

@@ -75,7 +75,16 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    let role = (session.user.user_metadata as any)?.role ?? 'student'
+    let role = 'student'
+    const userMetadata = session.user.user_metadata
+    if (
+      userMetadata &&
+      typeof userMetadata === 'object' &&
+      'role' in userMetadata &&
+      typeof (userMetadata as Record<string, unknown>).role === 'string'
+    ) {
+      role = (userMetadata as Record<string, unknown>).role as string
+    }
 
     // If the user's session metadata hasn't been updated yet, fall back to
     // checking the `profiles` table using the service role key. This allows
@@ -95,18 +104,18 @@ export async function updateSession(request: NextRequest) {
 
           if (process.env.NODE_ENV !== 'production') {
             // Debug output to help diagnose unexpected access during development
-            // eslint-disable-next-line no-console
             console.debug('[middleware] session.user.id=', session.user.id)
-            // eslint-disable-next-line no-console
-            console.debug('[middleware] session.user.user_metadata.role=', (session.user.user_metadata as any)?.role)
-            // eslint-disable-next-line no-console
-            console.debug('[middleware] profile.role=', (profile as any)?.role)
+            console.debug(
+              '[middleware] session.user.user_metadata.role=',
+              (session.user.user_metadata as Record<string, unknown>)?.role
+            )
+            console.debug('[middleware] profile.role=', (profile as { role?: string } | null)?.role)
           }
 
-          if (profile && (profile as any).role === 'admin') {
+          if (profile && (profile as { role?: string }).role === 'admin') {
             role = 'admin'
           }
-        } catch (e) {
+        } catch {
           // ignore and fall through to unauthorized below
         }
       }
