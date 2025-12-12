@@ -123,13 +123,14 @@ export function WelcomeSection() {
 
       {/* Summary Cards */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
-        <SummaryCard rank={rank} experience={experience} />
+        <SummaryCard rank={rank} experience={experience} iconTint="#67E8F9" />
         <SummaryCard 
           title="Finished"
           titleLine2="Jobs"
           value="3"
           subtitle="total tasks"
           icon={questBoardIcon}
+          iconTint="#6EE7B7"
         />
         <SummaryCard 
           title="Available"
@@ -137,6 +138,7 @@ export function WelcomeSection() {
           value="7"
           subtitle="total parties available"
           icon={partyIcon}
+          iconTint="#00B0DA"
         />
         <SummaryCard 
           title="Open"
@@ -144,6 +146,7 @@ export function WelcomeSection() {
           value="4"
           subtitle="available opportunities"
           icon={targetIcon}
+          iconTint="#8B5CF6"
         />
       </div>
     </div>
