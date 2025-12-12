@@ -38,23 +38,27 @@ export default function PartyBrowser({ onFilterChange }: PartyBrowserProps) {
 
   return (
     <div 
-      className="mt-8 rounded-xl p-6 border border-white/20 shadow-[0_4px_8px_rgba(0,0,0,0.25)]"
+      className="mt-8 rounded-xl p-4 border border-white/20 shadow-[0_4px_8px_rgba(0,0,0,0.25)]"
       style={{
         background: "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05))",
         WebkitBackdropFilter: "blur(10px)",
         backdropFilter: "blur(10px)",
       }}
     >
-      <div className="flex items-center gap-3 mb-4">
-        <Image
-          src={SwordIcon}
-          alt="Sword Icon"
-          width={24}
-          height={24}
-          className="w-6 h-6"
-          style={{ filter: 'brightness(0) saturate(100%) invert(81%) sepia(51%) saturate(433%) hue-rotate(102deg) brightness(100%) contrast(100%)' }}
-        />
-        <h2 className="text-xl font-bold text-white">Browse Party</h2>
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <div className="flex items-center gap-2">
+          <Image
+            src={SwordIcon}
+            alt="Sword Icon"
+            width={16}
+            height={16}
+            className="w-4 h-4 invert"
+          />
+          <h2 className="text-xl font-bold text-white">Browse Party</h2>
+        </div>
+        <button className="px-6 py-2 rounded-lg text-white font-medium transition-colors" style={{ backgroundColor: '#10BCD2', boxShadow: '0 0 12px rgba(16, 188, 210, 0.4)' }} onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 18px rgba(16, 188, 210, 0.6)'} onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 0 12px rgba(16, 188, 210, 0.4)'}>
+          + Create Party
+        </button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">

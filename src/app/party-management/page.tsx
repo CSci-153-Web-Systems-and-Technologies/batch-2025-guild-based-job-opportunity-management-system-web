@@ -2,6 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 import Topbar from '@/components/dashboard/Topbar'
 import PartyBrowser from '@/components/party-management/PartyBrowser'
+import PartyList from '@/components/party-management/PartyList'
 import PartyIcon from '@/assets/icons/party.png'
 
 export default async function PartyManagementPage() {
@@ -29,7 +30,7 @@ export default async function PartyManagementPage() {
 
       {/* Party Management content */}
       <section className="mt-8">
-        {/* TODO: Add party management components here */}
+        <PartyList />
       </section>
     </main>
   )
