@@ -10,6 +10,7 @@ interface SummaryCardProps {
   value?: string | number
   subtitle?: string
   icon?: any
+  iconTint?: string
   rank?: string
   experience?: number
 }
@@ -20,6 +21,7 @@ export function SummaryCard({
   value,
   subtitle,
   icon = crownIcon,
+  iconTint,
   rank,
   experience
 }: SummaryCardProps) {
@@ -47,14 +49,32 @@ export function SummaryCard({
           </p>
         </div>
         <div>
-          <Image 
-            src={icon}
-            alt={title} 
-            width={32} 
-            height={32}
-            className="w-8 h-8"
-            style={{ filter: 'brightness(0) saturate(100%) invert(89%) sepia(60%) saturate(350%) hue-rotate(114deg)' }}
-          />
+          {iconTint ? (
+            <div
+              className="w-8 h-8"
+              style={{
+                width: 32,
+                height: 32,
+                WebkitMaskImage: `url(${(icon as any).src || icon})`,
+                maskImage: `url(${(icon as any).src || icon})`,
+                WebkitMaskRepeat: 'no-repeat',
+                maskRepeat: 'no-repeat',
+                WebkitMaskSize: 'contain',
+                maskSize: 'contain',
+                backgroundColor: iconTint,
+                display: 'inline-block'
+              }}
+            />
+          ) : (
+            <Image 
+              src={icon}
+              alt={title} 
+              width={32} 
+              height={32}
+              className="w-8 h-8"
+              style={{ filter: 'brightness(0) saturate(100%) invert(89%) sepia(60%) saturate(350%) hue-rotate(114deg)' }}
+            />
+          )}
         </div>
       </div>
 
