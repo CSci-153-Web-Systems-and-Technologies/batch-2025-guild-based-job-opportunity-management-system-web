@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
+import Image from 'next/image'
+import FilterIcon from '@/assets/icons/filter.png'
 
 interface QuestFilterProps {
   onFilterChange?: (filters: {
@@ -42,7 +44,10 @@ export default function QuestFilter({ onFilterChange }: QuestFilterProps) {
         backdropFilter: "blur(10px)",
       }}
     >
-      <h2 className="text-xl font-bold text-white mb-4">Filter Quests</h2>
+      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+        <Image src={FilterIcon} alt="Filter" width={24} height={24} className="object-contain invert" />
+        Filter Quests
+      </h2>
 
       <div className="flex flex-col md:flex-row gap-4">
         {/* Difficulty Dropdown */}
