@@ -17,8 +17,8 @@ export default async function Page({
     redirect('/auth/login')
   }
 
-  const resolvedSearchParams = await (searchParams as any)
-  const rawError = resolvedSearchParams?.error
+  const resolvedSearchParams = await Promise.resolve(searchParams)
+  const rawError = (resolvedSearchParams as { [key: string]: string | string[] | undefined } | undefined)?.error
   const errorParam = Array.isArray(rawError) ? rawError[0] : rawError
   const errorMessage = errorParam === 'invalid' ? 'Invalid invite code.' : undefined
 

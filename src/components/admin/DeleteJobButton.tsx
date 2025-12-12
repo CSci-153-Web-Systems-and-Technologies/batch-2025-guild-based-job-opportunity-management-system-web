@@ -20,7 +20,6 @@ export default function DeleteJobButton({ jobId }: { jobId: string }) {
       }
       router.push('/admin/jobs')
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error(err)
       alert('Failed to delete job')
       setLoading(false)

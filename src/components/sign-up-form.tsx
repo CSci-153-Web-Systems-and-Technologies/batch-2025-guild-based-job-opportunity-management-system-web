@@ -15,10 +15,9 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { motion } from 'framer-motion'
-import styles from './login-form.module.css'
+import { motion, type HTMLMotionProps } from 'framer-motion'
 
-export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [firstName, setFirstName] = useState('')
@@ -58,20 +57,20 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
 
       // If the signUp returned a user (some flows return user/session immediately),
       // attempt a best-effort client-side upsert into `profiles` so names are stored.
-      const user = (data as any)?.user
+      const user = (data as unknown as { user?: { id: string; email?: string; user_metadata?: unknown } })?.user
         if (user) {
         try {
+          const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
           await supabase.from('profiles').upsert({
             auth_id: user.id,
             email: user.email ?? email,
-            first_name: firstName || null,
-            last_name: lastName || null,
+            first_name: firstName || (meta.first_name as string | undefined) || null,
+            last_name: lastName || (meta.last_name as string | undefined) || null,
             role: 'student',
           })
         } catch (upsertErr) {
           // Don't block sign-up flow on the upsert; log for debugging.
-          // eslint-disable-next-line no-console
-          console.warn('profiles upsert failed:', upsertErr)
+          console.warn('profiles upsert failed:', String(upsertErr))
         }
         // Also call the server-side upsert endpoint which uses the service role key
         // to guarantee the profile is created even if client RLS prevents it.
@@ -89,8 +88,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
           })
         } catch (svcErr) {
           // Non-fatal: log for debugging
-          // eslint-disable-next-line no-console
-          console.warn('server profiles upsert failed:', svcErr)
+          console.warn('server profiles upsert failed:', String(svcErr))
         }
       }
 
@@ -109,7 +107,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.995 }}
       transition={{ duration: 0.45, ease: [0.2, 0.9, 0.3, 1] }}
-      {...(props as any)}
+      {...props}
     >
       <Card
         className={cn('glass', className)}

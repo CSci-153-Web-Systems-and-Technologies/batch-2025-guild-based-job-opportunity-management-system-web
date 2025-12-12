@@ -33,6 +33,8 @@ export function PartyCard({
   isBookmarked = false,
   size = 'medium',
 }: PartyCardProps) {
+  // `id` may be useful for callers; mark as used to avoid unused-var warnings
+  void id
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [dropdownDirection, setDropdownDirection] = React.useState<'down' | 'up'>('down')
   const containerRef = React.useRef<HTMLDivElement>(null)
@@ -46,7 +48,6 @@ export function PartyCard({
       if (!containerRef.current || !dropdownRef.current) return
 
       const containerRect = containerRef.current.getBoundingClientRect()
-      const dropdownRect = dropdownRef.current.getBoundingClientRect()
       const viewportHeight = window.innerHeight
       const threshold = 20
 

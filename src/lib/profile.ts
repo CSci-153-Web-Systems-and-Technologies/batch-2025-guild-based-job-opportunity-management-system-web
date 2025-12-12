@@ -8,7 +8,7 @@ type Profile = {
   last_name?: string
   display_name?: string
   avatar_url?: string
-  metadata?: any
+  metadata?: Record<string, unknown>
   role?: string
 }
 
@@ -16,14 +16,15 @@ export async function ensureProfile(): Promise<Profile | null> {
   try {
     const supabase = createClient()
     const { data: userData } = await supabase.auth.getUser()
-    const user = (userData as any)?.user
+    const user = (userData as unknown as { user?: { id: string; email?: string; user_metadata?: unknown } })?.user
     if (!user) return null
 
     const authId = user.id
     const email = user.email || null
-    const meta = (user.user_metadata as any) || {}
-    const first = meta.first_name || meta.name || (meta.full_name || '').toString().split(' ')[0] || null
-    const avatar = meta.avatar_url || meta.avatar || null
+    const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
+    const first =
+      (meta.first_name as string | undefined) || (meta.name as string | undefined) || ((meta.full_name as string | undefined) || '').toString().split(' ')[0] || null
+    const avatar = (meta.avatar_url as string | undefined) || (meta.avatar as string | undefined) || null
 
     const upsert = {
       auth_id: authId,
@@ -44,9 +45,9 @@ export async function ensureProfile(): Promise<Profile | null> {
       } else if (data && data.length > 0) {
         return data[0] as Profile
       }
-    } catch (err) {
+    } catch (_err: unknown) {
       // ignore and try fallback
-      console.warn('ensureProfile upsert attempt with options failed:', err)
+      console.warn('ensureProfile upsert attempt with options failed:', String(_err))
     }
 
     // Fallback: try a plain upsert without options
@@ -58,12 +59,12 @@ export async function ensureProfile(): Promise<Profile | null> {
       }
       if (!data || data.length === 0) return null
       return data[0] as Profile
-    } catch (err) {
-      console.warn('ensureProfile upsert fallback failed', err)
+    } catch (_err: unknown) {
+      console.warn('ensureProfile upsert fallback failed', String(_err))
       return null
     }
-  } catch (err) {
-    console.warn('ensureProfile failed', err)
+  } catch (_err: unknown) {
+    console.warn('ensureProfile failed', String(_err))
     return null
   }
 }
@@ -74,9 +75,9 @@ export async function getProfileByAuthId(authId: string): Promise<Profile | null
     const { data, error } = await supabase.from('profiles').select('*').eq('auth_id', authId).single()
     if (error) return null
     return data as Profile
-  } catch (err) {
+  } catch {
     return null
   }
 }
-
-export default { ensureProfile, getProfileByAuthId }
+const profileApi = { ensureProfile, getProfileByAuthId }
+export default profileApi

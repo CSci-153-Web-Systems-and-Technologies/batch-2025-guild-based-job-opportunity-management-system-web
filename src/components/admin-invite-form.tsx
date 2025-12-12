@@ -33,7 +33,7 @@ export default function AdminInviteForm({ initialError }: { initialError?: strin
       } else {
         setError('Unable to verify invite code. Please try again.')
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.')
     } finally {
       setLoading(false)

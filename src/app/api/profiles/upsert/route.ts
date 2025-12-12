@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       if (!existingUser) {
         return NextResponse.json({ error: 'auth user not found' }, { status: 404 })
       }
-    } catch (validationErr) {
+    } catch {
       return NextResponse.json({ error: 'failed to validate auth user' }, { status: 500 })
     }
 

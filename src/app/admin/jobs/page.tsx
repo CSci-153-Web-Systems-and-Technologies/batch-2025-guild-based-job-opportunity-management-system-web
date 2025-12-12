@@ -1,4 +1,12 @@
 import React from 'react'
+type Job = {
+  id: string
+  title?: string
+  category?: string
+  reward_xp?: number
+  slots?: number
+  created_at?: string | null
+}
 import Link from 'next/link'
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
@@ -78,7 +86,7 @@ export default async function Page() {
                   </tr>
                 </thead>
                 <tbody>
-                  {jobs.map((job: any) => (
+                  {jobs.map((job: Job) => (
                     <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition-colors duration-150">
                       <td className="px-6 py-4">
                         <p className="text-white font-medium">{job.title}</p>

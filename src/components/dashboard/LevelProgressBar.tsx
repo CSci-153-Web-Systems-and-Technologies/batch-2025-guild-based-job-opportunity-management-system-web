@@ -24,7 +24,7 @@ export function LevelProgressBar() {
       try {
         const supabase = createClient()
         const { data: userData } = await supabase.auth.getUser()
-        const user = (userData as any)?.user
+        const user = (userData as unknown as { user?: { id: string } })?.user
         if (!user) return
 
         try {
@@ -54,7 +54,7 @@ export function LevelProgressBar() {
               totalExp: experience,
             })
           }
-        } catch (err) {
+        } catch {
           // Fallback to default progress
           if (!mounted) return
           setProgress({
@@ -64,7 +64,7 @@ export function LevelProgressBar() {
             totalExp: 0,
           })
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     })()

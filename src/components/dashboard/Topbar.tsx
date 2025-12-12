@@ -10,7 +10,7 @@ import { ensureProfile } from '@/lib/profile'
 export function Topbar() {
   const [query, setQuery] = React.useState('')
   const [focused, setFocused] = React.useState(false)
-  const [notifCount, setNotifCount] = React.useState(3)
+  const [notifCount] = React.useState(3)
   const [firstName, setFirstName] = React.useState<string | null>(null)
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null)
   const debounceRef = React.useRef<number | null>(null)
@@ -33,7 +33,7 @@ export function Topbar() {
       try {
         const supabase = createClient()
         const { data: userData } = await supabase.auth.getUser()
-        const user = (userData as any)?.user
+        const user = (userData as unknown as { user?: { id: string; email?: string; user_metadata?: unknown } })?.user
         if (!user) return
 
         // Try to select profile by auth_id
@@ -46,7 +46,7 @@ export function Topbar() {
 
           if (!mounted) return
 
-          if (profileError) {
+            if (profileError) {
             // Could be table missing or RLS blocking - fall back to ensureProfile
             const profile = await ensureProfile()
             if (!mounted) return
@@ -55,11 +55,11 @@ export function Topbar() {
               setAvatarUrl(profile.avatar_url || null)
             } else {
               // Final fallback to user metadata
-              const meta = (user.user_metadata as any) || {}
-              const full = meta.full_name || meta.name || meta.first_name || user.email || ''
-              const first = (full || '').toString().split(' ')[0] || null
-              setFirstName(first)
-              setAvatarUrl(meta.avatar_url || meta.avatar || null)
+                const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
+                const full = (meta.full_name as string | undefined) || (meta.name as string | undefined) || (meta.first_name as string | undefined) || user.email || ''
+                const first = (full || '').toString().split(' ')[0] || null
+                setFirstName(first)
+                setAvatarUrl((meta.avatar_url as string | undefined) || (meta.avatar as string | undefined) || null)
             }
           } else if (profileData) {
             setFirstName(profileData.first_name || (profileData.display_name || profileData.email || '').toString().split(' ')[0] || null)
@@ -73,7 +73,7 @@ export function Topbar() {
               setAvatarUrl(profile.avatar_url || null)
             }
           }
-        } catch (err) {
+        } catch {
           // On any unexpected error, attempt ensureProfile and fallback to user metadata
           const profile = await ensureProfile()
           if (!mounted) return
@@ -81,14 +81,14 @@ export function Topbar() {
             setFirstName(profile.first_name || (profile.display_name || profile.email || '').toString().split(' ')[0] || null)
             setAvatarUrl(profile.avatar_url || null)
           } else {
-            const meta = (user.user_metadata as any) || {}
-            const full = meta.full_name || meta.name || meta.first_name || user.email || ''
+            const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
+            const full = (meta.full_name as string | undefined) || (meta.name as string | undefined) || (meta.first_name as string | undefined) || user.email || ''
             const first = (full || '').toString().split(' ')[0] || null
             setFirstName(first)
-            setAvatarUrl(meta.avatar_url || meta.avatar || null)
+            setAvatarUrl((meta.avatar_url as string | undefined) || (meta.avatar as string | undefined) || null)
           }
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     })()

@@ -22,7 +22,7 @@ export function UserStatsSection() {
       try {
         const supabase = createClient()
         const { data: userData } = await supabase.auth.getUser()
-        const user = (userData as any)?.user
+        const user = (userData as unknown as { user?: { id: string } })?.user
         if (!user) return
 
         try {
@@ -41,7 +41,7 @@ export function UserStatsSection() {
               rank: profileData.rank || 'Beginner Adventurer',
             })
           }
-        } catch (err) {
+        } catch {
           // Fallback to default stats if query fails
           if (!mounted) return
           setStats({
@@ -50,7 +50,7 @@ export function UserStatsSection() {
             rank: 'Beginner Adventurer',
           })
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     })()

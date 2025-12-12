@@ -15,11 +15,9 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, type HTMLMotionProps } from 'framer-motion'
 
-import styles from './login-form.module.css'
-
-export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+export function LoginForm({ className, ...props }: HTMLMotionProps<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(true)
@@ -64,13 +62,14 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       try {
         const supabaseClient = createClient(remember)
         const { data: userData } = await supabaseClient.auth.getUser()
-        const user = (userData as any)?.user
+        const user = (userData as unknown as { user?: { id: string; user_metadata?: unknown; email?: string } })?.user
         if (user) {
+          const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
           const payload = {
             auth_id: user.id,
             email: user.email ?? null,
-            first_name: (user.user_metadata as any)?.first_name ?? null,
-            last_name: (user.user_metadata as any)?.last_name ?? null,
+            first_name: (meta.first_name as string | undefined) ?? null,
+            last_name: (meta.last_name as string | undefined) ?? null,
           }
 
           // call server-side upsert endpoint
@@ -82,7 +81,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         }
       } catch (err) {
         // Non-fatal: log for debugging
-        // eslint-disable-next-line no-console
         console.warn('profile upsert (post-login) failed:', err)
       }
 
@@ -102,7 +100,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.995 }}
       transition={{ duration: 0.45, ease: [0.2, 0.9, 0.3, 1] }}
-      {...(props as any)}
+      {...props}
     >
       <Card
         className={cn('glass', className)}

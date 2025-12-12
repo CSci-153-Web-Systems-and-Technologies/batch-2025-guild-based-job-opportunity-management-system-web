@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
             // No need to return existing cookies here for the purpose of setting new ones
             return []
           },
-          setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+          setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> | undefined }>) {
             cookiesToSet.forEach(({ name, value, options }) => {
               // Map Supabase cookie options to NextResponse.cookie options
               // NextResponse expects (name, value, { httpOnly, sameSite, path, maxAge, secure })

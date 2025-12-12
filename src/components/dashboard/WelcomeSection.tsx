@@ -24,7 +24,7 @@ export function WelcomeSection() {
       try {
         const supabase = createClient()
         const { data: userData } = await supabase.auth.getUser()
-        const user = (userData as any)?.user
+        const user = (userData as unknown as { user?: { id: string; email?: string; user_metadata?: unknown } })?.user
         if (!user) return
 
         try {
@@ -36,7 +36,7 @@ export function WelcomeSection() {
 
           if (!mounted) return
 
-          if (profileError) {
+            if (profileError) {
             const profile = await ensureProfile()
             if (!mounted) return
             if (profile) {
@@ -44,11 +44,11 @@ export function WelcomeSection() {
               setLastName(profile.last_name || null)
               setAvatarUrl(profile.avatar_url || null)
             } else {
-              const meta = (user.user_metadata as any) || {}
-              const fullName = (meta.full_name || meta.name || '').toString().split(' ')
-              setFirstName(fullName[0] || null)
-              setLastName(fullName[1] || null)
-              setAvatarUrl(meta.avatar_url || meta.avatar || null)
+                const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
+                const fullName = ((meta.full_name as string | undefined) || (meta.name as string | undefined) || '').toString().split(' ')
+                setFirstName(fullName[0] || null)
+                setLastName(fullName[1] || null)
+                setAvatarUrl((meta.avatar_url as string | undefined) || (meta.avatar as string | undefined) || null)
             }
           } else if (profileData) {
             setFirstName(profileData.first_name || null)
@@ -65,7 +65,7 @@ export function WelcomeSection() {
               setAvatarUrl(profile.avatar_url || null)
             }
           }
-        } catch (err) {
+        } catch {
           const profile = await ensureProfile()
           if (!mounted) return
           if (profile) {
@@ -73,14 +73,14 @@ export function WelcomeSection() {
             setLastName(profile.last_name || null)
             setAvatarUrl(profile.avatar_url || null)
           } else {
-            const meta = (user.user_metadata as any) || {}
-            const fullName = (meta.full_name || meta.name || '').toString().split(' ')
+            const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
+            const fullName = ((meta.full_name as string | undefined) || (meta.name as string | undefined) || '').toString().split(' ')
             setFirstName(fullName[0] || null)
             setLastName(fullName[1] || null)
-            setAvatarUrl(meta.avatar_url || meta.avatar || null)
+            setAvatarUrl((meta.avatar_url as string | undefined) || (meta.avatar as string | undefined) || null)
           }
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     })()

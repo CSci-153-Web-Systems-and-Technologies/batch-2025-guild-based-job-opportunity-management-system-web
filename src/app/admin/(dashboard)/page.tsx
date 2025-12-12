@@ -15,6 +15,8 @@ export default async function AdminDashboard() {
     return <div className="p-6">You must be logged in to view this page.</div>
   }
 
+  // Date.now is impure but this server component runs per-request; disable purity lint here
+  // eslint-disable-next-line react-hooks/purity
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
   const { count: activeUsersCount } = await supabase
