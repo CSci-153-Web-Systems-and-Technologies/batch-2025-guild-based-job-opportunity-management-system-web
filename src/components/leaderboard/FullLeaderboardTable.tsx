@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useState } from 'react'
 
 interface LeaderboardEntry {
   rank: number
@@ -39,6 +39,7 @@ const mockLeaderboardData: LeaderboardEntry[] = [
 ]
 
 export default function FullLeaderboardTable() {
+  const [hover, setHover] = useState(false)
   return (
     <section className="mt-8 mb-8">
       <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl backdrop-blur-sm">
@@ -114,7 +115,17 @@ export default function FullLeaderboardTable() {
 
       {/* Load More Button */}
       <div className="flex justify-center mt-8">
-        <button className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-emerald-500/50 transition-all transform hover:scale-105">
+        <button
+          className="px-8 py-3 font-semibold rounded-lg transition-all transform hover:scale-105"
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+          style={{
+            color: '#ffffff',
+            background: '#10BCD2',
+            boxShadow: hover ? '0 8px 24px rgba(0,225,255,0.25)' : 'none',
+            textShadow: hover ? '0 0 10px rgba(0,225,255,0.25)' : 'none'
+          }}
+        >
           Load More Adventurers
         </button>
       </div>
