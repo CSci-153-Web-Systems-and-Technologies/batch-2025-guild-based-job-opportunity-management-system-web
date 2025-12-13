@@ -1,8 +1,7 @@
 import React from 'react'
 import Image from 'next/image'
 import Topbar from '@/components/dashboard/Topbar'
-import QuestFilter from '@/components/questboard/QuestFilter'
-import JobList from '@/components/dashboard/JobList'
+import QuestBoardClient from '@/components/questboard/QuestBoardClient'
 import QuestBoardIcon from '@/assets/icons/quest-board.png'
 
 export default async function QuestBoardPage() {
@@ -26,12 +25,7 @@ export default async function QuestBoardPage() {
         <p className="text-white/60 text-sm">Choose your next adventure</p>
       </div>
 
-      <QuestFilter />
-
-      {/* Quest Board content */}
-      <section className="mt-8">
-        <JobList />
-      </section>
+      <QuestBoardClient />
     </main>
   )
 }

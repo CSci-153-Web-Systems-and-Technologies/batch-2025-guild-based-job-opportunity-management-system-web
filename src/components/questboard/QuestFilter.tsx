@@ -12,28 +12,45 @@ interface QuestFilterProps {
   }) => void
 }
 
-const difficulties = ['All Difficulties', 'Beginner', 'Intermediate', 'Advanced', 'Expert']
+// Keep 'All Difficulties' as the default option so server-side code
+// can detect the default label; then list the requested ranks.
+const difficulties = [
+  'All Difficulties',
+  'Beginner',
+  'Apprentice',
+  'Specialist',
+  'Expert',
+  'Master',
+  'Grandmaster',
+]
 const categories = ['All Categories', 'Web Development', 'Mobile Development', 'Data Science', 'UI/UX Design', 'DevOps', 'Other']
 
 export default function QuestFilter({ onFilterChange }: QuestFilterProps) {
   const [difficulty, setDifficulty] = useState('All Difficulties')
   const [category, setCategory] = useState('All Categories')
   const [datePosted, setDatePosted] = useState('Recent')
+  // Debounce filter changes to avoid firing too many requests during quick user input
+  const DEBOUNCE_MS = 250
 
   const handleDifficultyChange = (value: string) => {
     setDifficulty(value)
-    onFilterChange?.({ difficulty: value, category, datePosted })
   }
 
   const handleCategoryChange = (value: string) => {
     setCategory(value)
-    onFilterChange?.({ difficulty, category: value, datePosted })
   }
 
   const handleDateChange = (value: string) => {
     setDatePosted(value)
-    onFilterChange?.({ difficulty, category, datePosted: value })
   }
+
+  React.useEffect(() => {
+    const id = setTimeout(() => {
+      onFilterChange?.({ difficulty, category, datePosted })
+    }, DEBOUNCE_MS)
+
+    return () => clearTimeout(id)
+  }, [difficulty, category, datePosted, onFilterChange])
 
   return (
     <div 

@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "clean:next": "node ./scripts/clean-next.js",
     "lint": "eslint"
   },
   "dependencies": {

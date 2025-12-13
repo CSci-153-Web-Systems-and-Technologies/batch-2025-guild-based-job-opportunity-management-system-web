@@ -15,6 +15,11 @@ interface JobCardProps {
   postedDaysAgo: number
   companyLogo?: string
   isBookmarked?: boolean
+  deadline?: string
+  slots?: number
+  reward_xp?: number
+  status?: string
+  onCardClick?: (job: any) => void
 }
 
 export function JobCard({
@@ -28,12 +33,41 @@ export function JobCard({
   postedDaysAgo,
   companyLogo,
   isBookmarked = false,
+  deadline,
+  slots,
+  reward_xp,
+  status,
+  onCardClick,
 }: JobCardProps) {
-  // `id` is intentionally unused inside the component but kept for callers/keying
-  void id
+  const handleClick = () => {
+    // debug: trace clicks and id propagation
+    try {
+      console.debug('JobCard clicked', { id, title })
+    } catch (e) {
+      // ignore console failures in some environments
+    }
+
+    onCardClick?.({
+      id,
+      title,
+      company,
+      location,
+      description,
+      category: categories[0] || '',
+      pay,
+      postedDaysAgo,
+      companyLogo,
+      deadline,
+      slots,
+      reward_xp,
+      status,
+    })
+  }
+
   return (
     <div 
-      className="border border-white/20 rounded-xl flex flex-col p-6 relative overflow-hidden shadow-md shadow-[#000000]/50 w-full max-w-xs"
+      onClick={handleClick}
+      className="border border-white/20 rounded-xl flex flex-col p-6 relative overflow-hidden shadow-md shadow-[#000000]/50 w-full max-w-xs cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-[#6EE7B7]/20 hover:border-[#6EE7B7]/50"
       style={{
         backgroundColor: "#081A21",
       }}

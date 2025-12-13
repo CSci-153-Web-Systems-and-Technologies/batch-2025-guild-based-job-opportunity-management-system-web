@@ -8,10 +8,9 @@ CREATE TABLE ranks (
 INSERT INTO ranks (name, min_xp, max_xp)
 VALUES
 ('Beginner', 0, 149),
-('Apprentice', 150, 349),
-('Journeyman', 350, 599),
-('Adept', 600, 999),
-('Specialist', 1000, 1499),
-('Expert', 1500, 2499),
-('Master', 2500, 4999),
-('Grandmaster', 5000, 999999);
+('Apprentice', 150, 499),
+('Specialist', 500, 999),
+('Expert', 1000, 1749),
+('Master', 1750, 2499),
+('Grandmaster', 2500, 999999);
+
