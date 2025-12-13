@@ -1,0 +1,7 @@
+CREATE TABLE party_members (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  party_id BIGINT REFERENCES parties(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id),
+  role TEXT DEFAULT 'member',
+  joined_at TIMESTAMPTZ DEFAULT NOW()
+);
