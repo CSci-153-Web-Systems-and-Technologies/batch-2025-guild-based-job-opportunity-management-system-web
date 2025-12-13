@@ -7,7 +7,7 @@ type LeaderboardRow = {
   rank: number
   xp: number
   user_id: string
-  profile?: { id?: string; first_name?: string; display_name?: string; avatar_url?: string } | null
+  profile?: { id?: string; first_name?: string; display_name?: string; avatar_url?: string; email?: string } | null
 }
 
 export default function TopRankersSection() {
@@ -53,7 +53,9 @@ export default function TopRankersSection() {
 
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-emerald-400 mb-2">{row.profile?.display_name || row.profile?.first_name || 'Unknown'}</h3>
-                <p className="text-xs text-slate-400 truncate max-w-xs">{row.profile?.id ?? ''}</p>
+                {row.profile?.email && row.profile.email.includes('@') ? (
+                  <p className="text-xs text-slate-400 truncate max-w-xs">{row.profile.email}</p>
+                ) : null}
               </div>
 
               <div className="bg-slate-700/50 border border-cyan-500/30 rounded-full px-4 py-2">
