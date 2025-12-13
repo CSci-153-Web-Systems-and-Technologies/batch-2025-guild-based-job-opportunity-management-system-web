@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/server'
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: any) {
   try {
     const supabase = await createClient()
-
-    const partyId = params.id
+    const rawParams = context?.params
+    const params = rawParams instanceof Promise ? await rawParams : rawParams
+    const partyId = params?.id
     if (!partyId || partyId === 'undefined') {
       return NextResponse.json({ error: 'Invalid party id' }, { status: 400 })
     }
 
-    const { data: party, error } = await supabase.from('parties').select('*').eq('id', partyId).maybeSingle()
+    // include leader profile info and min rank when fetching a single party
+    const { data: party, error } = await supabase.from('parties').select('id, name, description, leader_id, min_rank_id, category, created_at, profiles(display_name, avatar_url), ranks(name, min_xp)').eq('id', partyId).maybeSingle()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (!party) return NextResponse.json({ error: 'Party not found' }, { status: 404 })
 
@@ -30,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, context: any) {
   try {
     const supabase = await createClient()
 
@@ -48,7 +50,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const profile = profileData as any
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-    const partyId = params.id
+    const rawParams = context?.params
+    const params = rawParams instanceof Promise ? await rawParams : rawParams
+    const partyId = params?.id
     const { data: partyData, error: partyErr } = await supabase.from('parties').select('id, leader_id').eq('id', partyId).maybeSingle()
     if (partyErr) return NextResponse.json({ error: 'Failed to fetch party' }, { status: 500 })
     if (!partyData) return NextResponse.json({ error: 'Party not found' }, { status: 404 })
@@ -69,6 +73,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (body?.name) updates.name = body.name
     if (Object.prototype.hasOwnProperty.call(body, 'description')) updates.description = body.description
 
+    // validate min_rank_id if present
+    if (Object.prototype.hasOwnProperty.call(body, 'min_rank_id')) {
+      const rawMin = body.min_rank_id
+      if (rawMin === null || rawMin === '') {
+        updates.min_rank_id = null
+      } else {
+        const parsed = Number(rawMin)
+        if (Number.isNaN(parsed)) return NextResponse.json({ error: 'Invalid min_rank_id' }, { status: 400 })
+        const { data: rankRow, error: rankErr } = await supabase.from('ranks').select('id').eq('id', parsed).maybeSingle()
+        if (rankErr) return NextResponse.json({ error: rankErr.message }, { status: 500 })
+        if (!rankRow) return NextResponse.json({ error: 'min_rank_id does not reference a valid rank' }, { status: 400 })
+        updates.min_rank_id = parsed
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(body, 'category')) updates.category = body.category
+
     if (Object.keys(updates).length === 0) return NextResponse.json({ error: 'No updates provided' }, { status: 400 })
 
     const { data: updated, error: updateErr } = await supabase
@@ -87,7 +108,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, context: any) {
   try {
     const supabase = await createClient()
 
@@ -105,7 +126,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     const profile = profileData as any
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-    const partyId = params.id
+    const rawParams = context?.params
+    const params = rawParams instanceof Promise ? await rawParams : rawParams
+    const partyId = params?.id
     const { data: partyData, error: partyErr } = await supabase.from('parties').select('id, leader_id').eq('id', partyId).maybeSingle()
     if (partyErr) return NextResponse.json({ error: 'Failed to fetch party' }, { status: 500 })
     if (!partyData) return NextResponse.json({ error: 'Party not found' }, { status: 404 })
@@ -124,7 +147,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     const { error: delErr } = await supabase.from('parties').delete().eq('id', partyId)
     if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 })
 
-    return NextResponse.json({ success: true }, { status: 204 })
+    // Return 200 with JSON body to avoid invalid 204-with-body responses
+    return NextResponse.json({ success: true }, { status: 200 })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: message }, { status: 500 })

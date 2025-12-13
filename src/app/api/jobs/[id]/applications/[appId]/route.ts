@@ -3,10 +3,9 @@ import { createClient } from '@/lib/server'
 
 const ALLOWED_STATUSES = ['pending', 'applied', 'accepted', 'rejected', 'completed'] as const
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string; appId: string } }) {
+export async function PATCH(req: NextRequest, context: any) {
   try {
     const supabase = await createClient()
-
     const { data: userData } = await supabase.auth.getUser()
     const user = (userData as any)?.user
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -24,8 +23,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const effectiveProfileId = profile.id
     if (!effectiveProfileId) return NextResponse.json({ error: 'Profile has no id' }, { status: 500 })
 
-    const jobId = params.id
-    const appId = params.appId
+    // resolve params (may be a Promise in some Next.js versions)
+    const rawParams = context?.params
+    const params = rawParams instanceof Promise ? await rawParams : rawParams
+    const jobId = params?.id
+    const appId = params?.appId
 
     // fetch application and verify it belongs to job
     const { data: appData, error: appErr } = await supabase

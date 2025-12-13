@@ -8,9 +8,10 @@ export async function GET(req: NextRequest) {
 
     const supabase = await createClient()
 
+    // Select party fields and include leader profile (via FK leader_id -> profiles.id)
     const { data: parties, error } = await supabase
       .from('parties')
-      .select('*')
+      .select('id, name, description, leader_id, min_rank_id, category, created_at, profiles(display_name, avatar_url), ranks(name, min_xp)')
       .order('created_at', { ascending: false })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -69,9 +70,21 @@ export async function POST(req: NextRequest) {
 
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
+    // validate min_rank_id if provided
+    let minRankValue: number | null = null
+    const rawMinRank = body?.min_rank_id
+    if (rawMinRank !== undefined && rawMinRank !== null && rawMinRank !== '') {
+      const parsed = Number(rawMinRank)
+      if (Number.isNaN(parsed)) return NextResponse.json({ error: 'Invalid min_rank_id' }, { status: 400 })
+      const { data: rankRow, error: rankErr } = await supabase.from('ranks').select('id').eq('id', parsed).maybeSingle()
+      if (rankErr) return NextResponse.json({ error: rankErr.message }, { status: 500 })
+      if (!rankRow) return NextResponse.json({ error: 'min_rank_id does not reference a valid rank' }, { status: 400 })
+      minRankValue = parsed
+    }
+
     const { data: inserted, error: insertErr } = await supabase
       .from('parties')
-      .insert({ name, description, leader_id: profile.id })
+      .insert({ name, description, leader_id: profile.id, category: body?.category ?? null, min_rank_id: minRankValue })
       .select('*')
       .maybeSingle()
 

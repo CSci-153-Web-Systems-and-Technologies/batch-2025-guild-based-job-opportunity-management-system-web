@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/server'
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: any) {
   try {
     const supabase = await createClient()
 
@@ -23,7 +23,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const applicantId = profile.id
     if (!applicantId) return NextResponse.json({ error: 'Profile has no id' }, { status: 500 })
 
-    const jobId = params.id
+    // resolve params (Next.js may provide params as a Promise)
+    const rawParams = context?.params
+    const params = rawParams instanceof Promise ? await rawParams : rawParams
+    const jobId = params?.id
 
     // fetch job
     const { data: jobData, error: jobErr } = await supabase.from('jobs').select('id, created_by').eq('id', jobId).maybeSingle()
@@ -57,7 +60,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, context: any) {
   try {
     const supabase = await createClient()
 
@@ -78,7 +81,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const applicantId: string = profile.id
     if (!applicantId) return NextResponse.json({ error: 'Profile has no id' }, { status: 500 })
 
-    const jobId = params.id
+    // resolve params (Next.js may provide params as a Promise)
+    const rawParams = context?.params
+    const params = rawParams instanceof Promise ? await rawParams : rawParams
+    const jobId = params?.id
 
     // Validate jobId is present and not the literal string 'undefined'
     if (!jobId || jobId === 'undefined') {

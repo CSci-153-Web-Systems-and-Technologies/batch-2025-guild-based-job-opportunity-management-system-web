@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/server'
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string; memberId: string } }) {
+export async function DELETE(_req: NextRequest, context: any) {
   try {
     const supabase = await createClient()
 
@@ -19,8 +19,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     const profile = profileData as any
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-    const partyId = params.id
-    const memberId = params.memberId
+    const rawParams = context?.params
+    const params = rawParams instanceof Promise ? await rawParams : rawParams
+    const partyId = params?.id
+    const memberId = params?.memberId
     if (!partyId || partyId === 'undefined' || !memberId || memberId === 'undefined') {
       return NextResponse.json({ error: 'Invalid ids' }, { status: 400 })
     }
@@ -51,7 +53,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     const { error: delErr } = await supabase.from('party_members').delete().eq('id', memberId)
     if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 })
 
-    return NextResponse.json({ success: true }, { status: 204 })
+    // Return 200 with JSON body to avoid invalid 204-with-body responses
+    return NextResponse.json({ success: true }, { status: 200 })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: message }, { status: 500 })
