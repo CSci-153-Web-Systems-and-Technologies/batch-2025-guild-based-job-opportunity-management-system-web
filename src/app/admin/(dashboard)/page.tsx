@@ -8,10 +8,10 @@ import { createClient as createServerClient } from '@/lib/server'
 export default async function AdminDashboard() {
   const supabase = await createServerClient()
 
-  const { data } = await supabase.auth.getSession()
-  const session = data?.session
+  const { data } = await supabase.auth.getUser()
+  const user = data?.user
 
-  if (!session) {
+  if (!user) {
     return <div className="p-6">You must be logged in to view this page.</div>
   }
 
@@ -63,7 +63,7 @@ export default async function AdminDashboard() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div className="flex-1">
             <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Welcome, <strong>{session.user.email}</strong></p>
+            <p className="mt-1 text-sm text-muted-foreground">Welcome, <strong>{user.email}</strong></p>
           </div>
 
           <div className="flex gap-3">

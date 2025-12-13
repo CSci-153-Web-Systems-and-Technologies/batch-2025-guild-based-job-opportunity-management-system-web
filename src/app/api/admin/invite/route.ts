@@ -17,10 +17,10 @@ export async function POST(req: Request) {
     }
 
     const supabase = await createClient()
-    const { data } = await supabase.auth.getSession()
-    const session = data?.session
+    const { data } = await supabase.auth.getUser()
+    const user = data?.user
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: 'unauthenticated' }, { status: 401 })
     }
 
@@ -31,11 +31,11 @@ export async function POST(req: Request) {
     }
 
     const admin = createAdminClient(url, serviceKey)
-    const userId = session.user.id
+    const userId = user.id
 
     // Update auth user metadata to include role: 'admin'
     await admin.auth.admin.updateUserById(userId, {
-      user_metadata: { ...(session.user.user_metadata || {}), role: 'admin' },
+      user_metadata: { ...(user.user_metadata || {}), role: 'admin' },
     })
 
     // Also update profiles table to set role = 'admin' (best-effort)

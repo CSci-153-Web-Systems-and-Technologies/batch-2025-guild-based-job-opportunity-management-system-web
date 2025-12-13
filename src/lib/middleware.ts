@@ -41,8 +41,8 @@ export async function updateSession(request: NextRequest) {
   const { data: claimsData } = await supabase.auth.getClaims()
   const claims = claimsData?.claims
 
-  const { data: sessionData } = await supabase.auth.getSession()
-  const session = sessionData?.session
+  const { data: userData } = await supabase.auth.getUser()
+  const user = userData?.user
 
   // If there's no authenticated user and we're not on auth pages, redirect
   if (
@@ -60,7 +60,7 @@ export async function updateSession(request: NextRequest) {
     // Allow anyone logged in to access the invite page so they can submit a
     // code and be promoted to admin. If not logged in, redirect to login.
     if (request.nextUrl.pathname.startsWith('/admin/invite')) {
-      if (!session) {
+      if (!user) {
         const url = request.nextUrl.clone()
         url.pathname = '/auth/login'
         return NextResponse.redirect(url)
@@ -68,15 +68,15 @@ export async function updateSession(request: NextRequest) {
 
       return supabaseResponse
     }
-    // Ensure there's an authenticated session
-    if (!session) {
+    // Ensure there's an authenticated user
+    if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = '/auth/login'
       return NextResponse.redirect(url)
     }
 
     let role = 'student'
-    const userMetadata = session.user.user_metadata
+    const userMetadata = (user as any)?.user_metadata
     if (
       userMetadata &&
       typeof userMetadata === 'object' &&
@@ -99,16 +99,13 @@ export async function updateSession(request: NextRequest) {
           const { data: profile } = await svc
             .from('profiles')
             .select('role')
-            .or(`auth_id.eq.${session.user.id},user_id.eq.${session.user.id}`)
+            .or(`auth_id.eq.${(user as any)?.id},user_id.eq.${(user as any)?.id}`)
             .maybeSingle()
 
           if (process.env.NODE_ENV !== 'production') {
             // Debug output to help diagnose unexpected access during development
-            console.debug('[middleware] session.user.id=', session.user.id)
-            console.debug(
-              '[middleware] session.user.user_metadata.role=',
-              (session.user.user_metadata as Record<string, unknown>)?.role
-            )
+            console.debug('[middleware] user.id=', (user as any)?.id)
+            console.debug('[middleware] user.user_metadata.role=', (user as any)?.user_metadata?.role)
             console.debug('[middleware] profile.role=', (profile as { role?: string } | null)?.role)
           }
 

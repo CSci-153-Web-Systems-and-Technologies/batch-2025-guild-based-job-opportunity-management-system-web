@@ -26,7 +26,16 @@ export default function JobList() {
     ;(async () => {
       try {
         const res = await fetch('/api/jobs')
-        if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch')
+        if (!res.ok) {
+          let errorMsg = 'Failed to fetch jobs'
+          try {
+            const errData = await res.json()
+            errorMsg = errData.error || errorMsg
+          } catch {
+            errorMsg = `Server error: ${res.status}`
+          }
+          throw new Error(errorMsg)
+        }
         const json = await res.json()
         if (!mounted) return
         setJobs(json.jobs || [])

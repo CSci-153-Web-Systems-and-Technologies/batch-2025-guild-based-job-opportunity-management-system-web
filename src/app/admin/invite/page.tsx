@@ -10,10 +10,10 @@ export default async function Page({
   searchParams?: { [key: string]: string | string[] | undefined } | Promise<{ [key: string]: string | string[] | undefined } | undefined>
 }) {
   const supabase = await createClient()
-  const { data } = await supabase.auth.getSession()
-  const session = data?.session
+  const { data } = await supabase.auth.getUser()
+  const user = data?.user
 
-  if (!session) {
+  if (!user) {
     redirect('/auth/login')
   }
 
