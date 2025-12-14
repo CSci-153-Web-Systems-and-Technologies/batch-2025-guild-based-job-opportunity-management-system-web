@@ -56,6 +56,8 @@ This document records the database tables and their attributes for quick referen
 - `description`
 - `leader_id` (UUID)
 - `created_at`
+- `category`
+- `min_rank_id`
 
 ## party_members
 - `id` (int)
