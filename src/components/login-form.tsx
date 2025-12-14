@@ -16,6 +16,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { motion, type HTMLMotionProps } from 'framer-motion'
+import OAuthButton from '@/components/oauth-button'
 
 export function LoginForm({ className, ...props }: HTMLMotionProps<'div'>) {
   const [email, setEmail] = useState('')
@@ -118,6 +119,21 @@ export function LoginForm({ className, ...props }: HTMLMotionProps<'div'>) {
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    try {
+      const supabase = createClient()
+      setIsLoading(true)
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/oauth-callback` },
+      })
+      if (error) throw error
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'OAuth sign-in failed')
+      setIsLoading(false)
+    }
+  }
+
   return (
     <motion.div
       className={cn('flex flex-col gap-6', className)}
@@ -200,13 +216,21 @@ export function LoginForm({ className, ...props }: HTMLMotionProps<'div'>) {
                 {isLoading ? 'Logging in...' : 'Login'}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link href="/auth/sign-up" className="font-semibold">
-                Register
-              </Link>
-            </div>
           </form>
+          <div className="flex items-center my-4">
+            <span className="flex-1 h-px bg-white/20" />
+            <span className="mx-3 text-sm text-white/80">Or</span>
+            <span className="flex-1 h-px bg-white/20" />
+          </div>
+          <div className="mt-2">
+            <OAuthButton provider="google" onClick={handleGoogleSignIn} disabled={isLoading} />
+          </div>
+          <div className="mt-4 text-center text-sm">
+            Don&apos;t have an account?{' '}
+            <Link href="/auth/sign-up" className="font-semibold">
+              Register
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </motion.div>

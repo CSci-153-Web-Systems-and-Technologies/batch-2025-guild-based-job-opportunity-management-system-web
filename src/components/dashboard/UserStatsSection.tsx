@@ -31,11 +31,17 @@ export function UserStatsSection() {
         const res = await fetch('/api/user/stats')
         if (!mounted) return
         if (res.ok) {
-          const json = await res.json()
-          setData(json)
+          try {
+            const text = await res.text()
+            if (!text) throw new Error('Empty response')
+            const json: ApiResponse = JSON.parse(text)
+            setData(json)
+          } catch (parseErr) {
+            console.error('[UserStatsSection] Failed to parse stats response:', parseErr)
+          }
         }
       } catch (err) {
-        // ignore for now
+        console.error('[UserStatsSection] Fetch error:', err)
       } finally {
         if (!mounted) return
         setIsLoading(false)
