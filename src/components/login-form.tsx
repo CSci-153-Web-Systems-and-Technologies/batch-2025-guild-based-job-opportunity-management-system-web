@@ -26,6 +26,9 @@ export function LoginForm({ className, ...props }: HTMLMotionProps<'div'>) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
+  // Prefer an explicit public URL when generating auth redirect links in production.
+  const origin = (process.env.NEXT_PUBLIC_APP_URL as string) ?? (typeof window !== 'undefined' ? window.location.origin : '')
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     const supabase = createClient(remember)
@@ -125,7 +128,7 @@ export function LoginForm({ className, ...props }: HTMLMotionProps<'div'>) {
       setIsLoading(true)
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/auth/oauth-callback` },
+        options: { redirectTo: `${origin}/auth/oauth-callback` },
       })
       if (error) throw error
     } catch (err: unknown) {
