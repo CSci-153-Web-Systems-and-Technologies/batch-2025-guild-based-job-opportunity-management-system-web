@@ -118,7 +118,10 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html, body {
+    @apply w-full h-full m-0 p-0 overflow-x-hidden;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
   }
 }

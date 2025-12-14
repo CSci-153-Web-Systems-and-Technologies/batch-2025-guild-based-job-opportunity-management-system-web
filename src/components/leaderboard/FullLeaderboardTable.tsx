@@ -41,7 +41,8 @@ export default function FullLeaderboardTable() {
 
   return (
     <section className="mt-8 mb-8">
-      <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl backdrop-blur-sm">
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl backdrop-blur-sm">
         {/* Table Header */}
         <div className="grid grid-cols-12 gap-4 px-8 py-5 border-b border-slate-700/50 bg-slate-900/50">
           <div className="col-span-1 flex items-center">
@@ -112,6 +113,62 @@ export default function FullLeaderboardTable() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {rows.map((entry) => (
+          <div
+            key={`${entry.rank}-${entry.name}`}
+            className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg border border-slate-700/50 p-4 shadow-lg backdrop-blur-sm"
+          >
+            {/* Rank and Name Header */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400 flex items-center justify-center">
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-sm font-bold text-white">
+                  {entry.name ? entry.name[0] : '?'}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-white">#{entry.rank}</span>
+                  <p className="text-sm font-semibold text-white truncate">{entry.name}</p>
+                </div>
+                {entry.email && entry.email.includes('@') ? (
+                  <p className="text-xs text-slate-400 truncate">{entry.email}</p>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Rank Title */}
+              <div className="flex flex-col">
+                <p className="text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Rank</p>
+                <span className="inline-block bg-slate-700/60 border border-cyan-500/30 rounded-full px-2 py-0.5 text-xs font-semibold text-cyan-400 whitespace-nowrap w-fit">
+                  {entry.level}
+                </span>
+              </div>
+
+              {/* Total Exp */}
+              <div className="flex flex-col">
+                <p className="text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Total Exp</p>
+                <span className="text-sm font-bold text-emerald-400">
+                  {entry.totalExp.toLocaleString()}
+                </span>
+              </div>
+
+              {/* Party Name - Full Width */}
+              <div className="col-span-2 flex flex-col">
+                <p className="text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Party</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-slate-200">👥</span>
+                  <span className="text-sm text-slate-300 truncate">{entry.partyName}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Load More Button */}

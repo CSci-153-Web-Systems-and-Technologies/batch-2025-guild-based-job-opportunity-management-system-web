@@ -147,7 +147,7 @@ export default function JobList({ filters }: { filters?: Filters }) {
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row gap-4 justify-left flex-wrap">
+      <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-start flex-wrap w-full">
         {jobs.map((job: Job) => {
           const postedDate = job.created_at ? new Date(job.created_at) : new Date()
           const daysAgo = Math.floor((Date.now() - postedDate.getTime()) / (1000 * 60 * 60 * 24))

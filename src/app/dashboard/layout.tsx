@@ -20,7 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div
-      className="min-h-screen flex bg-gradient-to-br from-[#081A21] via-[#0d2635] to-[#164557]"
+      className="w-screen h-screen min-h-screen flex bg-gradient-to-br from-[#081A21] via-[#0d2635] to-[#164557] overflow-x-hidden"
     >
       {/* client-side guard: if a newly-promoted admin somehow reaches /dashboard,
           redirect them immediately to /admin for a smoother UX */}
@@ -28,7 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* Sidebar (hidden on small screens) */}
       <Sidebar userRole="user" />
 
-      <div className="flex-1 min-h-screen md:ml-[calc(68px+2rem)]">
+      <div className="flex-1 min-h-screen w-full overflow-y-auto md:ml-[calc(68px+2rem)]">
         {/* main content area (Topbar will be inside pages) */}
         {children}
       </div>

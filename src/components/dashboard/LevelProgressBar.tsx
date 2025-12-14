@@ -31,7 +31,7 @@ export function LevelProgressBar() {
   }, [])
 
   return (
-    <div className="w-full max-w-sm mx-auto px-4 py-0">
+    <div className="w-full px-2 md:px-4 py-0">
       <div className="bg-gradient-to-r from-white/10 to-white/5 border border-white/20 rounded-full h-2 overflow-hidden backdrop-blur-sm shadow-lg shadow-[#6EE7B7]/20">
         <div
           className="h-full bg-gradient-to-r from-[#6EE7B7] to-[#6EE7B7] transition-all duration-500 ease-out"
@@ -39,8 +39,8 @@ export function LevelProgressBar() {
         />
       </div>
 
-      <div className="flex justify-between items-center mt-2 text-xs text-white/70">
-        <span>Progress to next level: {Math.round(percent)}%</span>
+      <div className="flex justify-between items-center mt-2 text-xs md:text-sm text-white/70">
+        <span>Progress: {Math.round(percent)}%</span>
         <span className="text-white/50">{totalExp} exp</span>
       </div>
     </div>

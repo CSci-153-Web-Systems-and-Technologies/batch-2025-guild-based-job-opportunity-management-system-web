@@ -154,15 +154,15 @@ export default function JobDetailsModal({ isOpen, onClose, jobId, job }: JobDeta
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-        aria-label="Close modal"
-      />
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity"
+            onClick={onClose}
+            aria-label="Close modal"
+          />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+      <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 pointer-events-none">
         {/* Toast (top-right) */}
         {showToast && (
           <div className="fixed top-6 right-6 z-60">
@@ -172,7 +172,7 @@ export default function JobDetailsModal({ isOpen, onClose, jobId, job }: JobDeta
           </div>
         )}
         <div
-          className="pointer-events-auto w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-white/20"
+          className="pointer-events-auto w-full h-full md:h-auto md:max-w-2xl md:max-h-[90vh] max-h-full overflow-y-auto rounded-none md:rounded-2xl shadow-2xl border border-white/20"
           style={{
             backgroundColor: '#081A21',
             background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
