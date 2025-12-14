@@ -76,12 +76,9 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
             console.warn('profiles upsert failed:', String(upsertErr))
           }
         }
-
-        // Always call server-side upsert so the service role key can create/patch
-        // the profile regardless of whether the client received a `user` object
-        // from `signUp` (some flows return no user until email confirmation).
+        
         try {
-          await fetch('/api/profiles/upsert', {
+          const res = await fetch('/api/profiles/upsert', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -92,6 +89,11 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
               display_name: username || null,
             }),
           })
+          if (!res.ok) {
+            // Surface server-side problems to console to aid debugging (non-fatal)
+            const text = await res.text().catch(() => '')
+            console.warn('server profiles upsert responded non-OK', res.status, text)
+          }
         } catch (svcErr) {
           // Non-fatal: log for debugging
           console.warn('server profiles upsert failed:', String(svcErr))
