@@ -1,11 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { requireAdmin } from '@/lib/admin'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const adminCheck = await requireAdmin(req)
+    if (adminCheck) return adminCheck
     const { id } = await params
     const body = await req.json()
     const { title, description, category, reward_xp, slots, pay, location } = body || {}

@@ -1,11 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { requireAdmin } from '@/lib/admin'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const adminCheck = await requireAdmin(req)
+    if (adminCheck) return adminCheck
     if (!supabaseUrl || !serviceKey) return NextResponse.json({ error: 'Missing SUPABASE env vars' }, { status: 500 })
     const supabase = createSupabaseClient(supabaseUrl, serviceKey)
     const { data, error } = await supabase.from('jobs').select('*').order('created_at', { ascending: false })

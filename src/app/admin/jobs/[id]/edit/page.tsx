@@ -49,20 +49,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         ) : null}
 
         {/* Form */}
-        <JobForm initial={job} actionUrl={`/api/admin/jobs/${id}`} method="PATCH" />
+        <div className="w-full max-w-2xl mx-auto pb-16">
+          <JobForm initial={job} actionUrl={`/api/admin/jobs/${id}`} method="PATCH" />
 
-        {/* Delete Section */}
-        {job ? (
-          <div className="mt-8 pt-8 border-t border-white/10">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Danger Zone</h3>
-                <p className="text-white/60 text-sm">Permanently delete this job opportunity</p>
+          {/* Delete Section */}
+          {job ? (
+            <div className="mt-6 pt-6 border-t border-white/10">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-2">Danger Zone</h3>
+                  <p className="text-white/60 text-sm">Permanently delete this job opportunity</p>
+                </div>
+                <DeleteJobButton jobId={id} />
               </div>
-              <DeleteJobButton jobId={id} />
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
     </div>
   )

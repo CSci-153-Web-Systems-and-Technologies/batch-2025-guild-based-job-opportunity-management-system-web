@@ -4,7 +4,11 @@ import React, { useState, useCallback } from 'react'
 import QuestFilter from '@/components/questboard/QuestFilter'
 import JobList from '@/components/dashboard/JobList'
 
-export default function QuestBoardClient() {
+interface QuestBoardClientProps {
+  isAdmin?: boolean
+}
+
+export default function QuestBoardClient({ isAdmin }: QuestBoardClientProps) {
   const [filters, setFilters] = useState({
     difficulty: 'All Difficulties',
     category: 'All Categories',
@@ -17,7 +21,7 @@ export default function QuestBoardClient() {
 
   return (
     <div>
-      <QuestFilter onFilterChange={handleFilterChange} />
+      <QuestFilter onFilterChange={handleFilterChange} isAdmin={isAdmin} />
       <section className="mt-8">
         <JobList filters={filters} />
       </section>
