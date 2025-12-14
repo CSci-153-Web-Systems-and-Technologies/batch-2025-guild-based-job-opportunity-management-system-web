@@ -35,6 +35,7 @@ export default function JobDetailsModal({ isOpen, onClose, jobId, job }: JobDeta
   const [applicationStatus, setApplicationStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
   const [showToast, setShowToast] = useState(false)
+  const [myApplication, setMyApplication] = useState<null | { id: string; status: string }>(null)
 
   // debug: log job payload when modal opens to ensure id is present
   React.useEffect(() => {
@@ -46,6 +47,50 @@ export default function JobDetailsModal({ isOpen, onClose, jobId, job }: JobDeta
       }
     }
   }, [isOpen, job])
+
+  // Fetch current user's application status for this job so we can reflect 'accepted' etc.
+  React.useEffect(() => {
+    let mounted = true
+    const fetchMyApp = async () => {
+      try {
+        if (!isOpen) return
+        const resolvedRaw = jobId ?? (job && (job.id ?? job.job_id ?? job._id))
+        const resolved = typeof resolvedRaw === 'string' || typeof resolvedRaw === 'number' ? String(resolvedRaw).trim() : ''
+        if (!resolved) return
+        const res = await fetch(`/api/jobs/${resolved}/application`, { credentials: 'same-origin' })
+        if (!res.ok) {
+          setMyApplication(null)
+          return
+        }
+        const json = await res.json().catch(() => null)
+        if (!mounted) return
+        setMyApplication(json?.application ?? null)
+      } catch (e) {
+        if (!mounted) return
+        setMyApplication(null)
+      }
+    }
+
+    fetchMyApp()
+
+    const handler = (ev: Event) => {
+      try {
+        const detail = (ev as CustomEvent)?.detail
+        const jobIdUpdated = detail?.jobId
+        const resolvedRaw = jobId ?? (job && (job.id ?? job.job_id ?? job._id))
+        const resolved = typeof resolvedRaw === 'string' || typeof resolvedRaw === 'number' ? String(resolvedRaw).trim() : ''
+        if (String(jobIdUpdated) === String(resolved)) {
+          fetchMyApp()
+        }
+      } catch {}
+    }
+
+    window.addEventListener('job_applications:updated', handler)
+    return () => {
+      mounted = false
+      window.removeEventListener('job_applications:updated', handler)
+    }
+  }, [isOpen, job, jobId])
 
   // Normalize display values so JSX doesn't access `job` when it's undefined
   const display = job ?? ({} as any)
@@ -260,9 +305,9 @@ export default function JobDetailsModal({ isOpen, onClose, jobId, job }: JobDeta
             <div className="pt-4 flex gap-3">
               <button
                 onClick={handleApply}
-                disabled={isApplying || applicationStatus === 'success'}
+                disabled={isApplying || applicationStatus === 'success' || Boolean(myApplication)}
                 className={`flex-1 py-3 rounded-lg font-semibold text-white transition-all duration-300 ${
-                  applicationStatus === 'success'
+                  applicationStatus === 'success' || (myApplication && myApplication.status === 'pending')
                     ? 'bg-[#6EE7B7] text-[#081A21]'
                     : 'bg-gradient-to-r from-[#6EE7B7] to-[#10b981] hover:shadow-lg hover:shadow-[#6EE7B7]/50 disabled:opacity-50'
                 }`}
@@ -271,6 +316,14 @@ export default function JobDetailsModal({ isOpen, onClose, jobId, job }: JobDeta
                   ? 'Applying...'
                   : applicationStatus === 'success'
                   ? '✓ Application submitted (pending review)'
+                  : myApplication
+                  ? myApplication.status === 'accepted'
+                    ? '✓ Application accepted'
+                    : myApplication.status === 'in_progress'
+                    ? 'Application in progress'
+                    : myApplication.status === 'rejected'
+                    ? 'Application rejected'
+                    : 'Application submitted'
                   : 'Apply Now'}
               </button>
               <button

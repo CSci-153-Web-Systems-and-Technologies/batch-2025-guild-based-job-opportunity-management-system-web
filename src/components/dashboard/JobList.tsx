@@ -33,60 +33,88 @@ export default function JobList({ filters }: { filters?: Filters }) {
   const [error, setError] = React.useState<string | null>(null)
   const [selectedJob, setSelectedJob] = React.useState<any | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
+  const selectedJobRef = React.useRef<any | null>(null)
 
+  // keep a mutable ref in sync to avoid creating a new `fetchJobs` when
+  // `selectedJob` object identity changes (prevents fetch loop when modal open)
   React.useEffect(() => {
-    let mounted = true
+    selectedJobRef.current = selectedJob
+  }, [selectedJob])
+
+  const fetchJobs = React.useCallback(async () => {
     setLoading(true)
     setError(null)
-
-    console.debug('JobList: fetching jobs with filters', filters)
-
     try {
-      ;(async () => {
-      try {
-        // Build query params from filters
-        const params = new URLSearchParams()
-        if (filters?.difficulty) params.set('difficulty', filters.difficulty)
-        if (filters?.category) params.set('category', filters.category)
-        if (filters?.datePosted) params.set('datePosted', filters.datePosted)
-        const query = params.toString() ? `?${params.toString()}` : ''
-        // Abort the fetch if it takes too long to avoid hanging the UI
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 10000) // 10s
-        const res = await fetch(`/api/jobs${query}`, { signal: controller.signal })
-        clearTimeout(timeout)
-        if (!res.ok) {
-          let errorMsg = 'Failed to fetch jobs'
-          try {
-            const errData = await res.json()
-            errorMsg = errData.error || errorMsg
-          } catch {
-            errorMsg = `Server error: ${res.status}`
-          }
-          throw new Error(errorMsg)
+      console.debug('JobList: fetching jobs with filters', filters)
+      // Build query params from filters
+      const params = new URLSearchParams()
+      if (filters?.difficulty) params.set('difficulty', filters.difficulty)
+      if (filters?.category) params.set('category', filters.category)
+      if (filters?.datePosted) params.set('datePosted', filters.datePosted)
+      const query = params.toString() ? `?${params.toString()}` : ''
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 10000)
+      const res = await fetch(`/api/jobs${query}`, { signal: controller.signal })
+      clearTimeout(timeout)
+      if (!res.ok) {
+        let errorMsg = 'Failed to fetch jobs'
+        try {
+          const errData = await res.json()
+          errorMsg = errData.error || errorMsg
+        } catch {
+          errorMsg = `Server error: ${res.status}`
         }
-        const json = await res.json()
-        if (!mounted) return
-        setJobs(json.jobs || [])
-      } catch (err: unknown) {
-        if (!mounted) return
-        const message = err instanceof Error ? err.message : String(err)
-        setError(message || 'Unknown error')
-      } finally {
-        if (!mounted) return
-        setLoading(false)
+        throw new Error(errorMsg)
       }
-      })()
-    } catch (err) {
-      console.error('JobList: unexpected error starting fetch', err)
-      if (mounted) {
-        setError(String(err))
-        setLoading(false)
-      }
-    }
+      const json = await res.json()
+      setJobs(json.jobs || [])
 
-    return () => { mounted = false }
+      // If a job is selected, refresh its payload so modal reflects the latest data.
+      // Use the ref to avoid making `selectedJob` a dependency of this callback
+      const currentSelected = selectedJobRef.current
+      if (currentSelected && currentSelected.id) {
+        const updated = (json.jobs || []).find((j: any) => String(j.id) === String(currentSelected.id))
+        if (updated) {
+          // Only set state if the payload actually differs to avoid re-renders
+          try {
+            const prevJson = JSON.stringify(currentSelected)
+            const nextJson = JSON.stringify({ ...currentSelected, ...updated })
+            if (prevJson !== nextJson) setSelectedJob((prev: any) => ({ ...prev, ...updated }))
+          } catch {
+            // fallback: update anyway if stringify fails
+            setSelectedJob((prev: any) => ({ ...prev, ...updated }))
+          }
+        }
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      setError(message || 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
   }, [filters])
+
+  React.useEffect(() => {
+    let mounted = true;
+    // call fetch once on mount / when filters change
+    (async () => {
+      if (!mounted) return
+      await fetchJobs()
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [fetchJobs])
+
+  // Listen for application status updates so UI can refresh (modal/slots/counts etc.)
+  React.useEffect(() => {
+    const handler = (_e: Event) => {
+      // simply re-fetch jobs; fetchJobs will also refresh selected job
+      fetchJobs().catch((e) => console.debug('job update fetch failed', e))
+    }
+    window.addEventListener('job_applications:updated', handler)
+    return () => window.removeEventListener('job_applications:updated', handler)
+  }, [fetchJobs])
 
   if (loading)
     return (

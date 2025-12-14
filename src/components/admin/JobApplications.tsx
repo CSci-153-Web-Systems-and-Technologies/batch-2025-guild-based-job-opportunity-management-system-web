@@ -73,8 +73,23 @@ export default function JobApplications() {
         alert(json?.error || `Failed to update (status ${res.status})`)
         return
       }
-      // optimistic refresh
-      setApplications((prev) => prev.map((a) => (a.id === appId ? { ...(a as any), status } : a)))
+      // Use server-returned application when possible, otherwise optimistic update
+      if (json?.application) {
+        setApplications((prev) => prev.map((a) => (a.id === appId ? (json.application as Application) : a)))
+      } else {
+        setApplications((prev) => prev.map((a) => (a.id === appId ? { ...(a as any), status } : a)))
+      }
+
+      // Notify other parts of the UI (job list / modals) that applications for a job changed
+      try {
+        const app = applications.find((x) => x.id === appId)
+        const jobId = app?.job_id
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('job_applications:updated', { detail: { jobId, appId, status } }))
+        }
+      } catch {
+        // ignore
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Unknown error')
     } finally {

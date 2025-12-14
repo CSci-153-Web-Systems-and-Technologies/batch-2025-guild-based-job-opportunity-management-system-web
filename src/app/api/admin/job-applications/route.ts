@@ -62,17 +62,49 @@ export async function PATCH(req: Request) {
     // If accepting, make sure slots available
     if (status === 'accepted') {
       const slots = (jobData as any)?.slots ?? 0
-      if (typeof slots === 'number' && slots > 0) {
-        const { count, error: cntErr } = await supabase
-          .from('job_applications')
-          .select('id', { count: 'exact', head: true })
-          .eq('job_id', jobId)
-          .eq('status', 'accepted')
-        if (cntErr) return NextResponse.json({ error: 'Failed to check accepted count' }, { status: 500 })
-        if (Number(count ?? 0) >= slots) {
-          return NextResponse.json({ error: 'No slots available' }, { status: 400 })
-        }
+      if (typeof slots !== 'number' || slots <= 0) {
+        return NextResponse.json({ error: 'No slots available' }, { status: 400 })
       }
+
+      // Try to decrement the job slots using optimistic concurrency: only update
+      // if the slots value matches what we read. This avoids simple race conditions
+      // where two admins accept at the same time. If the update affects no rows,
+      // treat it as "no slots available" and surface an error.
+      const desired = Number(slots) - 1
+      const { data: updatedJob, error: jobUpdateErr } = await supabase
+        .from('jobs')
+        .update({ slots: desired })
+        .eq('id', jobId)
+        .eq('slots', slots)
+        .select('id, slots')
+        .maybeSingle()
+
+      if (jobUpdateErr) return NextResponse.json({ error: 'Failed to claim slot' }, { status: 500 })
+      if (!updatedJob) {
+        // someone else modified slots concurrently or no slots left
+        return NextResponse.json({ error: 'No slots available' }, { status: 400 })
+      }
+
+      // Proceed to update the application. If updating the application fails,
+      // attempt to rollback the slot decrement (best-effort).
+      const { data: updated, error: updateErr } = await supabase
+        .from('job_applications')
+        .update({ status })
+        .eq('id', appId)
+        .select('*')
+        .maybeSingle()
+
+      if (updateErr || !updated) {
+        try {
+          await supabase.from('jobs').update({ slots: (updatedJob as any)?.slots + 1 }).eq('id', jobId)
+        } catch (rollbackErr) {
+          console.error('rollback failed', rollbackErr)
+        }
+        return NextResponse.json({ error: 'Failed to update application' }, { status: 500 })
+      }
+
+      // return the updated application
+      return NextResponse.json({ application: updated })
     }
 
     const { data: updated, error: updateErr } = await supabase
