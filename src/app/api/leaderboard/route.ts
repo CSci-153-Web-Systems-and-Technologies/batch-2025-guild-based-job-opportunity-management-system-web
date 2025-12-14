@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/server'
+import { errorResponse, successResponse } from '@/lib/api-response'
+import * as logger from '@/lib/logger'
 
 export async function GET(request: Request) {
   try {
@@ -17,8 +18,8 @@ export async function GET(request: Request) {
       .range(offset, offset + limit - 1)
 
     if (error) {
-      console.error('[api/leaderboard] supabase error:', error)
-      return NextResponse.json({ error: error.message ?? 'Failed to fetch leaderboard' }, { status: 500 })
+      logger.error('[api/leaderboard] supabase error:', error)
+      return errorResponse(error.message ?? 'Failed to fetch leaderboard', 500, undefined, { error })
     }
 
     const rows = (data ?? []) as any[]
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
         .in('user_id', userIds)
 
       if (pmError) {
-        console.error('[api/leaderboard] party_members fetch error:', pmError)
+        logger.error('[api/leaderboard] party_members fetch error:', pmError)
       } else if (pmData) {
         pmData.forEach((pm: any) => {
           partiesMap[pm.user_id] = pm.parties?.name ?? null
@@ -51,9 +52,9 @@ export async function GET(request: Request) {
       party_name: partiesMap[row.user_id] ?? null,
     }))
 
-    return NextResponse.json(list)
+    return successResponse(list)
   } catch (err) {
-    console.error('[api/leaderboard] unexpected error:', err)
-    return NextResponse.json({ error: 'Unexpected server error' }, { status: 500 })
+    logger.error('[api/leaderboard] unexpected error:', err)
+    return errorResponse('Unexpected server error', 500, undefined, { err })
   }
 }

@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { errorResponse, successResponse } from '@/lib/api-response'
+import * as logger from '@/lib/logger'
 
 export async function POST(req: Request) {
   try {
@@ -7,13 +8,13 @@ export async function POST(req: Request) {
     const auth_id = String(body?.auth_id ?? '')
 
     if (!auth_id) {
-      return NextResponse.json({ error: 'auth_id is required' }, { status: 400 })
+      return errorResponse('auth_id is required', 400)
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!supabaseUrl || !serviceKey) {
-      return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 })
+      return errorResponse('Service role key not configured', 500)
     }
 
     const supabase = createSupabaseClient(supabaseUrl, serviceKey)
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     if (profileErr) {
-      // Non-fatal: continue to attempt reading auth user metadata
+      logger.debug('[api/profiles/role] profile fetch non-fatal error', profileErr)
     }
 
     let roleName: string | null = null
@@ -44,12 +45,13 @@ export async function POST(req: Request) {
         // prefer explicit metadata role if present
         roleName = metaRole
       }
-    } catch {
-      // ignore
+    } catch (e) {
+      logger.debug('[api/profiles/role] auth lookup failed (non-fatal)', e)
     }
 
-    return NextResponse.json({ role: roleName })
+    return successResponse({ role: roleName })
   } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Unknown error' }, { status: 500 })
+    logger.error('[api/profiles/role] unexpected', err)
+    return errorResponse(err instanceof Error ? err.message : 'Unknown error', 500, undefined, { err })
   }
 }

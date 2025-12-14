@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/server'
+import { errorResponse, successResponse } from '@/lib/api-response'
+import * as logger from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,7 +16,10 @@ export async function GET(req: NextRequest) {
       .select('id, name, description, leader_id, min_rank_id, category, created_at, profiles(display_name, avatar_url), ranks(name, min_xp)')
       .order('created_at', { ascending: false })
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      logger.error('[api/parties] supabase error', error)
+      return errorResponse(error.message ?? 'Failed to fetch parties', 500, undefined, { error })
+    }
 
     const result: any = { parties: parties ?? [] }
 
@@ -26,7 +31,10 @@ export async function GET(req: NextRequest) {
         .in('party_id', ids)
         .order('joined_at', { ascending: true })
 
-      if (membersErr) return NextResponse.json({ error: membersErr.message }, { status: 500 })
+      if (membersErr) {
+        logger.error('[api/parties] members fetch error', membersErr)
+        return errorResponse(membersErr.message ?? 'Failed to fetch members', 500, undefined, { membersErr })
+      }
 
       // group members by party_id
       const grouped: Record<string, any[]> = {}
@@ -39,10 +47,11 @@ export async function GET(req: NextRequest) {
       result.members = grouped
     }
 
-    return NextResponse.json(result)
-  } catch (err) {
+    return successResponse(result)
+    } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: message }, { status: 500 })
+    logger.error('[api/parties] unexpected error', err)
+    return errorResponse(message, 500, undefined, { err })
   }
 }
 
@@ -52,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     const { data: userData } = await supabase.auth.getUser()
     const user = (userData as any)?.user
-    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    if (!user) return errorResponse('Not authenticated', 401)
 
     const { data: profileData, error: profileErr } = await supabase
       .from('profiles')
@@ -60,25 +69,31 @@ export async function POST(req: NextRequest) {
       .eq('auth_id', user.id)
       .maybeSingle()
 
-    if (profileErr) return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
+    if (profileErr) {
+      logger.error('[api/parties POST] profile fetch error', profileErr)
+      return errorResponse('Failed to fetch profile', 500, undefined, { profileErr })
+    }
     const profile = profileData as any
-    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    if (!profile) return errorResponse('Profile not found', 404)
 
     const body = await req.json()
     const name = body?.name
     const description = body?.description ?? null
 
-    if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    if (!name) return errorResponse('Name is required', 400)
 
     // validate min_rank_id if provided
     let minRankValue: number | null = null
     const rawMinRank = body?.min_rank_id
     if (rawMinRank !== undefined && rawMinRank !== null && rawMinRank !== '') {
       const parsed = Number(rawMinRank)
-      if (Number.isNaN(parsed)) return NextResponse.json({ error: 'Invalid min_rank_id' }, { status: 400 })
+      if (Number.isNaN(parsed)) return errorResponse('Invalid min_rank_id', 400)
       const { data: rankRow, error: rankErr } = await supabase.from('ranks').select('id').eq('id', parsed).maybeSingle()
-      if (rankErr) return NextResponse.json({ error: rankErr.message }, { status: 500 })
-      if (!rankRow) return NextResponse.json({ error: 'min_rank_id does not reference a valid rank' }, { status: 400 })
+      if (rankErr) {
+        logger.error('[api/parties POST] rank fetch error', rankErr)
+        return errorResponse(rankErr.message ?? 'Failed to validate rank', 500, undefined, { rankErr })
+      }
+      if (!rankRow) return errorResponse('min_rank_id does not reference a valid rank', 400)
       minRankValue = parsed
     }
 
@@ -88,14 +103,18 @@ export async function POST(req: NextRequest) {
       .select('*')
       .maybeSingle()
 
-    if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
+    if (insertErr) {
+      logger.error('[api/parties POST] insert failed', insertErr)
+      return errorResponse(insertErr.message ?? 'Failed to insert party', 500, undefined, { insertErr })
+    }
 
     // Add leader as a member with role 'leader'
     await supabase.from('party_members').insert({ party_id: (inserted as any).id, user_id: profile.id, role: 'leader' })
 
-    return NextResponse.json({ party: inserted }, { status: 201 })
+    return successResponse({ party: inserted }, 201)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: message }, { status: 500 })
+    logger.error('[api/parties] unexpected error', err)
+    return errorResponse(message, 500, undefined, { err })
   }
 }
