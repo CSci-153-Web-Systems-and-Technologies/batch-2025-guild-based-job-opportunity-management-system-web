@@ -96,9 +96,9 @@ export function WelcomeSection() {
   const displayName = [firstName, lastName].filter(Boolean).join(' ') || 'User'
 
   return (
-    <div className="flex flex-col items-center gap-4 py-8">
+    <div className="flex flex-col items-center gap-1 md:gap-4 py-4 md:py-8 w-full">
       {/* Profile Picture */}
-      <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-[#6EE7B7] to-[#0f3a47] flex items-center justify-center border-4 border-[#6EE7B7]/30 shadow-lg">
+      <div className="w-16 md:w-32 h-16 md:h-32 rounded-full overflow-hidden bg-gradient-to-br from-[#6EE7B7] to-[#0f3a47] flex items-center justify-center border-2 md:border-4 border-[#6EE7B7]/30 shadow-lg flex-shrink-0">
         {avatarUrl ? (
           <Image 
             src={avatarUrl} 
@@ -108,27 +108,31 @@ export function WelcomeSection() {
             className="object-cover w-full h-full"
           />
         ) : (
-          <div className="text-4xl font-bold text-white">
+          <div className="text-base md:text-4xl font-bold text-white">
             {displayName.split(' ').map(n => n[0]).join('').toUpperCase()}
           </div>
         )}
       </div>
 
       {/* Welcome Message */}
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-white">
+      <div className="text-center mt-1 md:mt-0">
+        <h2 className="text-base md:text-3xl font-bold text-white">
           Welcome, {displayName}
         </h2>
       </div>
 
       {/* User Stats */}
-      <UserStatsSection />
+      <div className="mt-1 md:mt-2">
+        <UserStatsSection />
+      </div>
 
       {/* Level Progress Bar */}
-      <LevelProgressBar />
+      <div className="mt-2 md:mt-3 w-full px-0">
+        <LevelProgressBar />
+      </div>
 
       {/* Summary Cards */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
+      <div className="flex flex-col sm:flex-row gap-2 md:gap-4 justify-center flex-wrap w-full px-0 mt-3 md:mt-4">
         <SummaryCard rank={rank} experience={experience} iconTint="#67E8F9" isLoading={isLoadingSummary} />
         <SummaryCard 
           title="Finished"

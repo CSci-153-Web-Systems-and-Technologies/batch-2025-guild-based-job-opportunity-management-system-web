@@ -75,7 +75,7 @@ export function SummaryCard({
 
   return (
     <div 
-      className="border border-white/20 rounded-xl flex flex-col items-start justify-start py-6 px-6 relative overflow-hidden shadow-lg shadow-[#000000]/50 w-[230px] backdrop-blur-md"
+      className="border border-white/20 rounded-xl flex flex-col items-start justify-start py-4 md:py-6 px-3 md:px-6 relative overflow-hidden shadow-lg shadow-[#000000]/50 w-[calc(100%-32px)] sm:max-w-[calc(50%-8px)] md:w-[230px] mx-auto md:mx-0 backdrop-blur-md"
       style={{
         background: "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05))",
         WebkitBackdropFilter: "blur(10px)",
@@ -83,22 +83,22 @@ export function SummaryCard({
       }}
     >
       {/* Crown Icon and Current Rank Label */}
-      <div className="flex items-center justify-between w-full mb-4">
+      <div className="flex items-center justify-between w-full mb-2 md:mb-4">
         <div className="flex flex-col">
-          <p className="text-lg font-semibold text-white/60 uppercase tracking-wide">
+          <p className="text-xs md:text-lg font-semibold text-white/60 uppercase tracking-wide">
             {title}
           </p>
-          <p className="text-lg font-semibold text-white/60 uppercase tracking-wide">
+          <p className="text-xs md:text-lg font-semibold text-white/60 uppercase tracking-wide">
             {titleLine2}
           </p>
         </div>
         <div>
           {iconTint ? (
             <div
-              className="w-8 h-8"
+              className="w-6 md:w-8 h-6 md:h-8"
               style={{
-                width: 32,
-                height: 32,
+                width: 24,
+                height: 24,
                 WebkitMaskImage: `url(${typeof icon === 'string' ? icon : (icon as StaticImageData).src})`,
                 maskImage: `url(${typeof icon === 'string' ? icon : (icon as StaticImageData).src})`,
                 WebkitMaskRepeat: 'no-repeat',
@@ -115,7 +115,7 @@ export function SummaryCard({
               alt={title} 
               width={32} 
               height={32}
-              className="w-8 h-8"
+              className="w-6 md:w-8 h-6 md:h-8"
               style={{ filter: 'brightness(0) saturate(100%) invert(89%) sepia(60%) saturate(350%) hue-rotate(114deg)' }}
             />
           )}
@@ -123,17 +123,17 @@ export function SummaryCard({
       </div>
 
       {/* Content: use a fixed min-height and bottom alignment so value/subtitle align across cards */}
-      <div className="text-left z-10 w-full flex flex-col justify-end" style={{ minHeight: 72 }}>
+      <div className="text-left z-10 w-full flex flex-col justify-end" style={{ minHeight: 48 }}>
         {/* Rank Name - shrink-to-fit using JS so the text scales down instead of being truncated */}
         <div ref={containerRef} style={{ width: '100%' }}>
           {isLoading ? (
-            <SkeletonShimmer width="100%" height="44px" className="mb-1" />
+            <SkeletonShimmer width="100%" height="32px" className="mb-1" />
           ) : (
             <h2
               ref={textRef}
               className="font-bold text-white mb-1"
               style={{
-                fontSize: `${fontSizePx ?? defaultFontSize}px`,
+                fontSize: `${fontSizePx ?? 28}px`,
                 lineHeight: 1,
                 whiteSpace: 'nowrap',
                 overflow: 'visible',
@@ -147,9 +147,9 @@ export function SummaryCard({
 
         {/* Available EXP / subtitle */}
         {isLoading ? (
-          <SkeletonShimmer width="80%" height="16px" className="mt-1" />
+          <SkeletonShimmer width="80%" height="12px" className="mt-1" />
         ) : (
-          <p className="text-sm font-medium text-white/60 mt-1">
+          <p className="text-xs md:text-sm font-medium text-white/60 mt-1">
             {displaySubtitle}
           </p>
         )}

@@ -53,16 +53,16 @@ export default async function QuestBoardPage() {
     <main className="p-6">
       <Topbar />
 
-      <div className="mt-6 flex items-center justify-center gap-4">
+      <div className="mt-6 flex items-center justify-center gap-2 md:gap-4">
         <Image
           src={QuestBoardIcon}
           alt="Quest Board Icon"
           width={60}
           height={60}
-          className="w-16 h-16"
+          className="w-8 md:w-16 h-8 md:h-16"
           style={{ filter: 'brightness(0) saturate(100%) invert(81%) sepia(51%) saturate(433%) hue-rotate(102deg) brightness(100%) contrast(100%)' }}
         />
-        <h1 className="text-5xl font-bold text-white">Quest Board</h1>
+        <h1 className="text-2xl md:text-5xl font-bold text-white">Quest Board</h1>
       </div>
 
       <div className="mt-2 text-center">

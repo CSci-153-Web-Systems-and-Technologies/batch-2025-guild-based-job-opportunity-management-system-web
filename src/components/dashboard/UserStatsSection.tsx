@@ -48,14 +48,14 @@ export function UserStatsSection() {
   const xp = data?.stats?.xp ?? 0
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 py-0">
+    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 md:gap-3 py-0">
       <div className="flex flex-col items-center gap-1">
-        <div className="bg-gradient-to-r from-[#67E8F9]/20 to-[#67E8F9]/20 border border-[#67E8F9]/40 rounded-full px-3 py-1 backdrop-blur-sm shadow-md shadow-[#000000]/50">
+        <div className="bg-gradient-to-r from-[#67E8F9]/20 to-[#67E8F9]/20 border border-[#67E8F9]/40 rounded-full px-2 md:px-3 py-1 backdrop-blur-sm shadow-md shadow-[#000000]/50">
           <div className="flex items-center gap-1">
-            <span className="text-sm">⭐</span>
+            <span className="text-xs md:text-sm">⭐</span>
             <div className="text-center">
               {isLoading ? (
-                <SkeletonShimmer width="80px" height="12px" />
+                <SkeletonShimmer width="70px" height="10px" />
               ) : (
                 <p className="text-xs font-semibold text-white">{rankName}</p>
               )}
@@ -65,13 +65,13 @@ export function UserStatsSection() {
       </div>
 
       <div className="flex flex-col items-center gap-1">
-        <div className="flex items-center gap-1 bg-gradient-to-r from-[#6EE7B7]/20 to-[#6EE7B7]/20 border border-[#6EE7B7]/40 rounded-full px-3 py-1 backdrop-blur-sm shadow-md shadow-[#000000]/50">
-          <span className="text-sm">✨</span>
+        <div className="flex items-center gap-1 bg-gradient-to-r from-[#6EE7B7]/20 to-[#6EE7B7]/20 border border-[#6EE7B7]/40 rounded-full px-2 md:px-3 py-1 backdrop-blur-sm shadow-md shadow-[#000000]/50">
+          <span className="text-xs md:text-sm">✨</span>
           <div className="text-center">
             {isLoading ? (
-              <SkeletonShimmer width="60px" height="12px" />
+              <SkeletonShimmer width="50px" height="10px" />
             ) : (
-              <p className="text-xs font-semibold text-white">{xp} exp</p>
+              <p className="text-xs font-semibold text-white\">{xp} exp</p>
             )}
           </div>
         </div>

@@ -4,12 +4,14 @@ import * as React from 'react'
 import Image from 'next/image'
 import SearchIcon from '@/assets/icons/search.png'
 import NotificationIcon from '@/assets/icons/notification.png'
+import MobileSidebar from './MobileSidebar'
 import { useRouter } from 'next/navigation'
 
 type SearchItem = { id: string; title: string; type: 'job' | 'party'; subtitle?: string }
 
 export function Topbar() {
   const router = useRouter()
+  const [mobileOpen, setMobileOpen] = React.useState(false)
   const [query, setQuery] = React.useState('')
   const [focused, setFocused] = React.useState(false)
   const [notifOpen, setNotifOpen] = React.useState(false)
@@ -39,22 +41,21 @@ export function Topbar() {
           return
         }
 
-        // fetch jobs and parties and do a simple client-side filter
         const jobsRes = await fetch('/api/jobs')
         const partiesRes = await fetch('/api/parties')
         const jobsJson = await jobsRes.json()
         const partiesJson = await partiesRes.json()
 
-        const jobs = (jobsJson.jobs || []).filter((j: any) => {
+        const jobs = ((jobsJson.jobs || []) as any[]).filter((j) => {
           const t = (j.title || '') + ' ' + (j.company_name || j.company || '')
           return String(t).toLowerCase().includes(value.toLowerCase())
-        }).slice(0, 6).map((j: any) => ({ id: String(j.id), title: j.title || 'Untitled', type: 'job' as const, subtitle: j.company_name || j.company }))
+        }).slice(0, 6).map((j) => ({ id: String(j.id), title: j.title || 'Untitled', type: 'job', subtitle: j.company_name || j.company }))
 
-        const parties = (partiesJson.parties || []).filter((p: any) => {
+        const parties = ((partiesJson.parties || []) as any[]).filter((p) => {
           return String(p.name || '').toLowerCase().includes(value.toLowerCase())
-        }).slice(0, 6).map((p: any) => ({ id: String(p.id), title: p.name, type: 'party' as const, subtitle: p.category || '' }))
+        }).slice(0, 6).map((p) => ({ id: String(p.id), title: p.name, type: 'party', subtitle: p.category || '' }))
 
-        setSearchResults([...jobs, ...parties].slice(0, 8))
+        setSearchResults((([...jobs, ...parties].slice(0, 8)) as unknown) as SearchItem[])
       } catch (err) {
         // ignore search errors for now
         setSearchResults([])
@@ -92,14 +93,27 @@ export function Topbar() {
   }
 
   return (
-    <div className="flex items-center justify-between py-4 px-6 border-b border-border bg-transparent">
-      {/* Left: greeting */}
-      <div className="flex items-center">
-        <span className="text-3xl font-bold text-[#6EE7B7]">Good morning,&nbsp;</span>
-        <span className="text-3xl font-bold text-white">User</span>
+    <div className="flex items-center justify-between py-3 px-3 md:py-4 md:px-6 border-b border-border bg-transparent gap-2 md:gap-4">
+      {/* Left: greeting + mobile hamburger */}
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          aria-label="Open menu"
+          onClick={() => setMobileOpen(true)}
+          className="inline-flex items-center justify-center p-2 rounded-md text-white/80 hover:bg-white/10 md:hidden flex-shrink-0"
+          title="Open navigation menu"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        <div className="hidden md:flex items-center min-w-0">
+          <span className="text-2xl md:text-3xl font-bold text-[#6EE7B7]">Good morning,&nbsp;</span>
+          <span className="text-2xl md:text-3xl font-bold text-white">User</span>
+        </div>
       </div>
-      <div className="flex items-center gap-4 transform">
-        <div className="relative">
+      <div className="flex items-center gap-2 md:gap-4 transform flex-shrink-0">
+        <div className="relative flex-shrink-0 w-40 md:w-auto">
           <input
             aria-label="Search"
             placeholder=""
@@ -108,11 +122,11 @@ export function Topbar() {
             onFocus={() => setFocused(true)}
             onBlur={() => setTimeout(() => setFocused(false), 150)}
             className="
-              w-120
-              h-12
-              pl-10 pr-10 py-2 
+              w-full
+              h-10 md:h-12
+              pl-8 pr-8 md:pl-10 md:pr-10 py-2 
               rounded-full 
-              text-sm text-white 
+              text-xs md:text-sm text-white 
               placeholder:text-gray-300
               focus:outline-none
               bg-white/10 
@@ -141,7 +155,7 @@ export function Topbar() {
 
           {/* Dropdown */}
           {(focused || searchResults.length > 0) && (
-            <div className="absolute left-0 mt-2 w-96 bg-white/6 border border-white/10 rounded-lg shadow-lg backdrop-blur-md z-40 overflow-hidden">
+            <div className="absolute left-0 mt-2 w-full md:w-96 bg-white/6 border border-white/10 rounded-lg shadow-lg backdrop-blur-md z-40 overflow-hidden">
               {searchResults.length === 0 ? (
                 <div className="p-3 text-white/60">No results</div>
               ) : (
@@ -163,12 +177,12 @@ export function Topbar() {
           )}
         </div>
 
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <button
             aria-label="Notifications"
             title="Notifications"
             onClick={toggleNotif}
-            className="w-12 h-12 relative p-2 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_4px_8px_rgba(0,0,0,0.25)] backdrop-blur-md flex items-center justify-center"
+            className="w-10 h-10 md:w-12 md:h-12 relative p-2 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_4px_8px_rgba(0,0,0,0.25)] backdrop-blur-md flex items-center justify-center"
             style={{
               background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))",
               WebkitBackdropFilter: "blur(8px)",
@@ -184,7 +198,7 @@ export function Topbar() {
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white/6 border border-white/10 rounded-lg shadow-lg backdrop-blur-md z-40 overflow-hidden">
+            <div className="absolute right-0 mt-2 w-full md:w-80 bg-white/6 border border-white/10 rounded-lg shadow-lg backdrop-blur-md z-40 overflow-hidden">
               <div className="p-3 border-b border-white/10 text-white font-semibold">Notifications</div>
               <ul>
                 {notifications.length === 0 && <li className="p-3 text-white/60">No notifications</li>}
@@ -206,17 +220,18 @@ export function Topbar() {
         <button
           aria-label="Profile"
           title={'Profile'}
-          className="ml-2 flex items-center gap-3 px-3 h-12 w-40 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.25)] backdrop-blur-md"
+          className="ml-1 md:ml-2 flex items-center gap-2 md:gap-3 px-2 md:px-3 h-10 md:h-12 w-auto md:w-40 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.25)] backdrop-blur-md flex-shrink-0"
           style={{
             background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))",
             WebkitBackdropFilter: "blur(8px)",
             backdropFilter: "blur(8px)",
           }}
         >
-          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold text-white">U</div>
-          <span className="text-sm font-medium text-white/90">User</span>
+          <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white/10 flex items-center justify-center text-xs md:text-sm font-semibold text-white flex-shrink-0">U</div>
+          <span className="hidden md:inline text-sm font-medium text-white/90">User</span>
         </button>
       </div>
+      <MobileSidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
     </div>
   )
 }
