@@ -29,8 +29,6 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Prefer an explicit public URL when generating auth redirect links in production.
-  // Set `NEXT_PUBLIC_APP_URL` in Vercel to your deployed domain (e.g. https://your-app.vercel.app).
   const origin = (process.env.NEXT_PUBLIC_APP_URL as string) ?? (typeof window !== 'undefined' ? window.location.origin : '')
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -52,8 +50,8 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
         options: {
           emailRedirectTo: `${origin}/dashboard`,
           data: {
-            // Force the role to 'student' on sign-up (do not allow choosing role)
-            role: 'student',
+            // Do not write a free-text `role` column here; roles are represented
+            // by `role_id` in the database. We still include names/display_name.
             first_name: firstName || undefined,
             last_name: lastName || undefined,
             display_name: username || undefined,
@@ -62,44 +60,42 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
       })
       if (error) throw error
 
-      // If the signUp returned a user (some flows return user/session immediately),
-      // attempt a best-effort client-side upsert into `profiles` so names are stored.
       const user = (data as unknown as { user?: { id: string; email?: string; user_metadata?: unknown } })?.user
         if (user) {
-        try {
-          const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
-          await supabase.from('profiles').upsert({
-            auth_id: user.id,
-            email: user.email ?? email,
-            first_name: firstName || (meta.first_name as string | undefined) || null,
-            last_name: lastName || (meta.last_name as string | undefined) || null,
-            display_name: username || (meta.display_name as string | undefined) || null,
-            role: 'student',
-          })
-        } catch (upsertErr) {
-          // Don't block sign-up flow on the upsert; log for debugging.
-          console.warn('profiles upsert failed:', String(upsertErr))
+          try {
+            const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
+            await supabase.from('profiles').upsert({
+              auth_id: user.id,
+              email: user.email ?? email,
+              first_name: firstName || (meta.first_name as string | undefined) || null,
+              last_name: lastName || (meta.last_name as string | undefined) || null,
+              display_name: username || (meta.display_name as string | undefined) || null,
+            })
+          } catch (upsertErr) {
+            // Don't block sign-up flow on the upsert; log for debugging.
+            console.warn('profiles upsert failed:', String(upsertErr))
+          }
         }
-        // Also call the server-side upsert endpoint which uses the service role key
-        // to guarantee the profile is created even if client RLS prevents it.
+
+        // Always call server-side upsert so the service role key can create/patch
+        // the profile regardless of whether the client received a `user` object
+        // from `signUp` (some flows return no user until email confirmation).
         try {
           await fetch('/api/profiles/upsert', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              auth_id: user.id,
-              email: user.email ?? email,
+              auth_id: user?.id ?? undefined,
+              email: user?.email ?? email,
               first_name: firstName || null,
               last_name: lastName || null,
               display_name: username || null,
-              role: 'student',
             }),
           })
         } catch (svcErr) {
           // Non-fatal: log for debugging
           console.warn('server profiles upsert failed:', String(svcErr))
         }
-      }
 
       // After sign-up, send users to the normal dashboard (default role is student)
       router.push('/dashboard')
