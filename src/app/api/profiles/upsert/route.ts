@@ -63,7 +63,10 @@ export async function POST(req: Request) {
       display_name: display_name ?? (userMeta.display_name as string | undefined) ?? null,
     }
 
-    const { data, error } = await supabase.from('profiles').upsert(upsertPayload).select('*')
+    // Use onConflict so the upsert updates the row identified by `auth_id`.
+    // This avoids creating duplicate rows or failing to update when a profile
+    // already exists with the same auth_id.
+    const { data, error } = await supabase.from('profiles').upsert(upsertPayload, { onConflict: 'auth_id' }).select('*')
 
     if (error) {
       logger.error('[api/profiles/upsert] upsert error', error)
