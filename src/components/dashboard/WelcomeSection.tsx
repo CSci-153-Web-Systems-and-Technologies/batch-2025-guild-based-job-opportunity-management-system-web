@@ -33,21 +33,30 @@ export function WelcomeSection() {
         try {
           const res = await fetch('/api/dashboard/summary')
           if (res.ok) {
-            const json = await res.json()
-            if (!mounted) return
-            const p = json.profile || {}
-            const display = p.display_name || `${p.first_name || ''} ${p.last_name || ''}`.trim()
-            setFirstName(display ? display.split(' ')[0] : null)
-            setLastName(display ? display.split(' ').slice(1).join(' ') : null)
-            setAvatarUrl(p.avatar_url || null)
+            try {
+              const text = await res.text()
+              if (!text) {
+                throw new Error('Empty response body')
+              }
+              const json = JSON.parse(text)
+              if (!mounted) return
+              const p = json.profile || {}
+              const display = p.display_name || `${p.first_name || ''} ${p.last_name || ''}`.trim()
+              setFirstName(display ? display.split(' ')[0] : null)
+              setLastName(display ? display.split(' ').slice(1).join(' ') : null)
+              setAvatarUrl(p.avatar_url || null)
 
-            if (json.rank && json.rank.name) setRank(json.rank.name)
-            if (typeof json.xp === 'number') setExperience(json.xp)
+              if (json.rank && json.rank.name) setRank(json.rank.name)
+              if (typeof json.xp === 'number') setExperience(json.xp)
 
-            setFinishedJobs(typeof json.finishedJobsCount === 'number' ? json.finishedJobsCount : json.finished_jobs_count ?? null)
-            setAvailableParties(typeof json.partiesCount === 'number' ? json.partiesCount : json.parties_count ?? null)
-            setOpenQuests(typeof json.openQuestsCount === 'number' ? json.openQuestsCount : json.open_quests_count ?? null)
-            setIsLoadingSummary(false)
+              setFinishedJobs(typeof json.finishedJobsCount === 'number' ? json.finishedJobsCount : json.finished_jobs_count ?? null)
+              setAvailableParties(typeof json.partiesCount === 'number' ? json.partiesCount : json.parties_count ?? null)
+              setOpenQuests(typeof json.openQuestsCount === 'number' ? json.openQuestsCount : json.open_quests_count ?? null)
+              setIsLoadingSummary(false)
+            } catch (parseErr) {
+              console.error('[WelcomeSection] Failed to parse summary response:', parseErr)
+              setIsLoadingSummary(false)
+            }
           } else {
             setIsLoadingSummary(false)
             // fallback: original profile logic if the summary endpoint fails

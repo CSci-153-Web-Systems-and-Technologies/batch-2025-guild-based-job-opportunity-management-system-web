@@ -16,12 +16,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { motion, type HTMLMotionProps } from 'framer-motion'
+import OAuthButton from '@/components/oauth-button'
 
 export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [username, setUsername] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -50,6 +52,7 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
             role: 'student',
             first_name: firstName || undefined,
             last_name: lastName || undefined,
+            display_name: username || undefined,
           },
         },
       })
@@ -66,6 +69,7 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
             email: user.email ?? email,
             first_name: firstName || (meta.first_name as string | undefined) || null,
             last_name: lastName || (meta.last_name as string | undefined) || null,
+            display_name: username || (meta.display_name as string | undefined) || null,
             role: 'student',
           })
         } catch (upsertErr) {
@@ -83,6 +87,7 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
               email: user.email ?? email,
               first_name: firstName || null,
               last_name: lastName || null,
+              display_name: username || null,
               role: 'student',
             }),
           })
@@ -97,6 +102,22 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const supabase = createClient()
+      setIsLoading(true)
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/oauth-callback` },
+      })
+      if (error) throw error
+      // The browser will redirect to the provider's consent page.
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'OAuth sign-in failed')
       setIsLoading(false)
     }
   }
@@ -149,6 +170,16 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
                 </div>
               </div>
               <div className="grid gap-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -192,13 +223,21 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
                 {isLoading ? 'Creating an account...' : 'Sign up'}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
-              Already have an account?{' '}
-              <Link href="/auth/login" className="font-semibold">
-                Login
-              </Link>
-            </div>
           </form>
+          <div className="flex items-center my-4">
+            <span className="flex-1 h-px bg-white/20" />
+            <span className="mx-3 text-sm text-white/80">Or</span>
+            <span className="flex-1 h-px bg-white/20" />
+          </div>
+          <div className="mt-2">
+            <OAuthButton provider="google" onClick={handleGoogleSignIn} disabled={isLoading} />
+          </div>
+          <div className="mt-4 text-center text-sm">
+            Already have an account?{' '}
+            <Link href="/auth/login" className="font-semibold">
+              Login
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </motion.div>
