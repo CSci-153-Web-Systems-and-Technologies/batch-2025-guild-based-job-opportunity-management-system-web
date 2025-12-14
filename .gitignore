@@ -17,6 +17,11 @@
 /.next/
 /out/
 
+# project artifacts & logs
+*.log
+# TypeScript build info
+tsconfig.tsbuildinfo
+
 # production
 /build
 

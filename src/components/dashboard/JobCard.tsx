@@ -1,0 +1,170 @@
+"use client"
+
+import * as React from 'react'
+import Image from 'next/image'
+import bookmarkIcon from '@/assets/icons/bookmark.png'
+
+interface JobCardProps {
+  id: string
+  title: string
+  company: string
+  location: string
+  description: string
+  categories: string[]
+  pay: number
+  postedDaysAgo: number
+  companyLogo?: string
+  isBookmarked?: boolean
+  deadline?: string
+  slots?: number
+  reward_xp?: number
+  status?: string
+  onCardClick?: (job: any) => void
+}
+
+export function JobCard({
+  id,
+  title,
+  company,
+  location,
+  description,
+  categories,
+  pay,
+  postedDaysAgo,
+  companyLogo,
+  isBookmarked = false,
+  deadline,
+  slots,
+  reward_xp,
+  status,
+  onCardClick,
+}: JobCardProps) {
+  const handleClick = () => {
+    // debug: trace clicks and id propagation
+    try {
+      console.debug('JobCard clicked', { id, title })
+    } catch (e) {
+      // ignore console failures in some environments
+    }
+
+    onCardClick?.({
+      id,
+      title,
+      company,
+      location,
+      description,
+      category: categories[0] || '',
+      pay,
+      postedDaysAgo,
+      companyLogo,
+      deadline,
+      slots,
+      reward_xp,
+      status,
+    })
+  }
+
+  return (
+    <div 
+      onClick={handleClick}
+      className="border border-white/20 rounded-lg md:rounded-xl flex flex-col p-3 md:p-6 relative overflow-hidden shadow-md shadow-[#000000]/50 w-full md:max-w-xs cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-[#6EE7B7]/20 hover:border-[#6EE7B7]/50 active:scale-95"
+      style={{
+        backgroundColor: "#081A21",
+      }}
+    >
+      {/* Header with Logo and Menu */}
+      <div className="flex items-start justify-between mb-2 md:mb-4">
+        <div className="flex items-center gap-2 md:gap-3">
+          {companyLogo ? (
+            <div className="w-10 md:w-12 h-10 md:h-12 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center flex-shrink-0">
+              <Image 
+                src={companyLogo} 
+                alt={company} 
+                width={48} 
+                height={48}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-10 md:w-12 h-10 md:h-12 rounded-lg bg-gradient-to-br from-[#6EE7B7] to-[#0f3a47] flex items-center justify-center text-xs md:text-sm font-bold text-white flex-shrink-0">
+              {company.split(' ')[0][0]}
+            </div>
+          )}
+          <div className="min-w-0">
+            <h3 className="text-sm md:text-base font-bold text-white truncate">{title}</h3>
+            <p className="text-xs text-white/60 truncate">{company}, {location}</p>
+          </div>
+        </div>
+
+        <div className="flex items-start">
+          <button
+            aria-label="Job options"
+            className="p-2 rounded hover:bg-white/6 transition-colors text-white/60"
+            title="More options"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <title>More options</title>
+              <circle cx="6" cy="12" r="1.6" fill="currentColor" />
+              <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+              <circle cx="18" cy="12" r="1.6" fill="currentColor" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Description */}
+      <p className="text-xs md:text-sm text-white/70 mb-2 md:mb-4 line-clamp-2">
+        {description}
+      </p>
+
+      {/* Footer with Pay, Date, and Categories */}
+      <div className="mt-auto pt-2 space-y-2 md:space-y-3">
+        {/* Categories with Glassmorphism */}
+        <div className="flex flex-wrap gap-1 md:gap-2">
+          {categories.map((category) => (
+            <span 
+              key={category}
+              className="px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs font-medium text-white/90 border border-white/20 shadow-[0_4px_8px_rgba(0,0,0,0.25)]"
+              style={{
+                background: "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05))",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+              }}
+            >
+              {category}
+            </span>
+          ))}
+        </div>
+
+        {/* Pay and Date with right-aligned save button */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+            <p className="text-base md:text-lg font-bold text-white whitespace-nowrap">
+              P{pay.toLocaleString()}
+            </p>
+            <span className="text-white/40 flex-shrink-0">•</span>
+            <p className="text-xs text-white/60 whitespace-nowrap">
+              {postedDaysAgo === 0 ? 'Today' : postedDaysAgo === 1 ? '1 day ago' : `${postedDaysAgo} days ago`}
+            </p>
+          </div>
+          <button
+            aria-pressed={isBookmarked}
+            className="p-1 rounded hover:bg-white/6 transition-colors text-white/60 flex-shrink-0"
+            title={isBookmarked ? 'Saved' : 'Save job'}
+          >
+            <Image
+              src={bookmarkIcon}
+              alt={isBookmarked ? 'Bookmarked' : 'Save'}
+              width={18}
+              height={18}
+              className="w-4 h-4"
+              style={{ filter: isBookmarked ? 'brightness(0) saturate(100%) invert(75%) sepia(29%) saturate(475%) hue-rotate(121deg)' : 'brightness(0) saturate(100%) invert(100%)' }}
+            />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default JobCard
