@@ -9,7 +9,7 @@ type Profile = {
   display_name?: string
   avatar_url?: string
   metadata?: Record<string, unknown>
-  role?: string
+  role_id?: number
 }
 
 export async function ensureProfile(): Promise<Profile | null> {
