@@ -5,10 +5,10 @@ import * as logger from '@/lib/logger'
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { auth_id, email, first_name, last_name } = body || {}
+    const { auth_id, email, first_name, last_name, display_name } = body || {}
 
-    if (!auth_id) {
-      return errorResponse('auth_id is required', 400)
+    if (!auth_id && !email) {
+      return errorResponse('auth_id or email is required', 400)
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -20,25 +20,50 @@ export async function POST(req: Request) {
 
     const supabase = createSupabaseClient(supabaseUrl, serviceKey)
 
-    // Validate that the provided auth_id corresponds to an existing auth user.
+    let authUser: any = null
     try {
-      const { data: existingUser, error: userErr } = await supabase.auth.admin.getUserById(auth_id)
-      if (userErr) {
-        logger.error('[api/profiles/upsert] auth lookup failed', userErr)
-        return errorResponse('auth user not found', 404, undefined, { userErr })
-      }
-      if (!existingUser) {
-        return errorResponse('auth user not found', 404)
+      if (auth_id) {
+        const { data: getUserData, error: userErr } = await supabase.auth.admin.getUserById(auth_id)
+        if (userErr) {
+          logger.error('[api/profiles/upsert] auth lookup failed', userErr)
+          return errorResponse('auth user not found', 404, undefined, { userErr })
+        }
+        authUser = (getUserData as any)?.user ?? null
+        if (!authUser) {
+          return errorResponse('auth user not found', 404)
+        }
+      } else {
+        // No auth_id provided; try to find the user by email using the admin list API.
+        const { data: listData, error: listErr } = await supabase.auth.admin.listUsers()
+        if (listErr) {
+          logger.error('[api/profiles/upsert] admin.listUsers failed', listErr)
+          return errorResponse('failed to resolve auth user by email', 500, undefined, { listErr })
+        }
+        const users = (listData as any)?.users || []
+        authUser = users.find((u: any) => (u?.email || '').toLowerCase() === (email || '').toLowerCase()) ?? null
+        if (!authUser) {
+          // If we still can't find an auth user, proceed with a profile upsert without auth linkage
+          // (some flows create a profile row prior to an auth row being available). auth_id remains null.
+          authUser = null
+        }
       }
     } catch (e) {
       logger.error('[api/profiles/upsert] auth lookup unexpected error', e)
       return errorResponse('failed to validate auth user', 500, undefined, { e })
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert({ auth_id, email: email ?? null, first_name: first_name ?? null, last_name: last_name ?? null })
-      .select('*')
+    const userMeta = (authUser?.user_metadata as Record<string, unknown>) || {}
+
+    const resolvedAuthId = auth_id ?? (authUser?.id as string | undefined) ?? null
+    const upsertPayload = {
+      auth_id: resolvedAuthId,
+      email: email ?? (authUser?.email as string | undefined) ?? null,
+      first_name: first_name ?? (userMeta.first_name as string | undefined) ?? null,
+      last_name: last_name ?? (userMeta.last_name as string | undefined) ?? null,
+      display_name: display_name ?? (userMeta.display_name as string | undefined) ?? null,
+    }
+
+    const { data, error } = await supabase.from('profiles').upsert(upsertPayload).select('*')
 
     if (error) {
       logger.error('[api/profiles/upsert] upsert error', error)

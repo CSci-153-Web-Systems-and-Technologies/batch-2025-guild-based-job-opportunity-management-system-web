@@ -36,6 +36,8 @@ export function SummaryCard({
   const containerRef = React.useRef<HTMLDivElement | null>(null)
   const defaultFontSize = 44 // px
   const minFontSize = 12 // px
+  const reducedDefaultFontSize = 50// px
+  const reducedMinFontSize = 28 // px
   const [fontSizePx, setFontSizePx] = React.useState<number | null>(null)
 
   React.useLayoutEffect(() => {
@@ -47,10 +49,10 @@ export function SummaryCard({
     }
 
     // Start from default and reduce until it fits or reaches min
-    let fs = defaultFontSize
+    let fs = reducedDefaultFontSize
     node.style.fontSize = `${fs}px`
     let safety = 0
-    while (node.scrollWidth > container.clientWidth && fs > minFontSize && safety < 200) {
+    while (node.scrollWidth > container.clientWidth && fs > reducedMinFontSize && safety < 200) {
       fs -= 1
       node.style.fontSize = `${fs}px`
       safety += 1
@@ -59,10 +61,10 @@ export function SummaryCard({
 
     // Observe container size changes and re-fit
     const ro = new ResizeObserver(() => {
-      let f = defaultFontSize
+      let f = reducedDefaultFontSize
       node.style.fontSize = `${f}px`
       let it = 0
-      while (node.scrollWidth > container.clientWidth && f > minFontSize && it < 200) {
+      while (node.scrollWidth > container.clientWidth && f > reducedMinFontSize && it < 200) {
         f -= 1
         node.style.fontSize = `${f}px`
         it += 1
@@ -75,7 +77,7 @@ export function SummaryCard({
 
   return (
     <div 
-      className="border border-white/20 rounded-xl flex flex-col items-start justify-start py-4 md:py-6 px-3 md:px-6 relative overflow-hidden shadow-lg shadow-[#000000]/50 w-[calc(100%-32px)] sm:max-w-[calc(50%-8px)] md:w-[230px] mx-auto md:mx-0 backdrop-blur-md"
+      className="border border-white/20 rounded-xl flex flex-col items-start justify-start py-4 md:py-6 px-3 md:px-6 relative overflow-hidden shadow-lg shadow-[#000000]/50 w-[calc(100%-32px)] sm:max-w-[calc(50%-8px)] md:w-[275px] mx-auto md:mx-0 backdrop-blur-md"
       style={{
         background: "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05))",
         WebkitBackdropFilter: "blur(10px)",
@@ -132,12 +134,12 @@ export function SummaryCard({
             <h2
               ref={textRef}
               className="font-bold text-white mb-1"
-              style={{
-                fontSize: `${fontSizePx ?? 28}px`,
-                lineHeight: 1,
-                whiteSpace: 'nowrap',
-                overflow: 'visible',
-              }}
+                style={{
+                  fontSize: `${fontSizePx ?? reducedDefaultFontSize}px`,
+                  lineHeight: 1,
+                  whiteSpace: 'nowrap',
+                  overflow: 'visible',
+                }}
               title={typeof displayValue === 'string' ? displayValue : String(displayValue)}
             >
               {displayValue}

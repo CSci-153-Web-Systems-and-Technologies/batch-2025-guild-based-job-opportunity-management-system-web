@@ -53,15 +53,28 @@ export async function GET() {
     }
 
     if (!rank) {
-      // fallback: find rank by xp
-      const { data: rankByXp } = await supabase
+      const xp = stats.xp ?? 0
+      // Preferred: find rank where min_xp <= xp <= max_xp
+      const { data: rankInRange } = await supabase
         .from('ranks')
         .select('*')
-        .lte('min_xp', stats.xp)
-        .gte('max_xp', stats.xp)
+        .lte('min_xp', xp)
+        .gte('max_xp', xp)
         .limit(1)
         .maybeSingle()
-      rank = rankByXp as Rank | null
+      if (rankInRange) {
+        rank = rankInRange as Rank | null
+      } else {
+        // Fallback: pick the rank with the greatest min_xp <= xp
+        const { data: fallbackRank } = await supabase
+          .from('ranks')
+          .select('*')
+          .lte('min_xp', xp)
+          .order('min_xp', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        rank = fallbackRank as Rank | null
+      }
     }
 
     // Compute progress
