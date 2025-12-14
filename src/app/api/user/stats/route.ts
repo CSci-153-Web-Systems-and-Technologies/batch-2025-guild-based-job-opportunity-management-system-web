@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/server'
 import type { Profile, UserStats, Rank } from '@/types/db'
+import { errorResponse, successResponse } from '@/lib/api-response'
+import * as logger from '@/lib/logger'
 
 function clamp(n: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, n))
@@ -12,7 +13,7 @@ export async function GET() {
 
     const { data: userData } = await supabase.auth.getUser()
     const user = (userData as any)?.user
-    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    if (!user) return errorResponse('Not authenticated', 401)
 
     // Fetch profile by auth_id
     const { data: profileData, error: profileError } = await supabase
@@ -22,14 +23,14 @@ export async function GET() {
       .maybeSingle()
 
     if (profileError) {
-      console.error('[api/user/stats] profile error', profileError)
-      return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
+      logger.error('[api/user/stats] profile error', profileError)
+      return errorResponse('Failed to fetch profile', 500, undefined, { profileError })
     }
 
     const profile = profileData as Profile | null
 
     // If no profile found, we can't proceed
-    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    if (!profile) return errorResponse('Profile not found', 404)
 
     const { data: statsData, error: statsError } = await supabase
       .from('user_stats')
@@ -38,8 +39,8 @@ export async function GET() {
       .maybeSingle()
 
     if (statsError) {
-      console.error('[api/user/stats] stats error', statsError)
-      return NextResponse.json({ error: 'Failed to fetch user stats' }, { status: 500 })
+      logger.error('[api/user/stats] stats error', statsError)
+      return errorResponse('Failed to fetch user stats', 500, undefined, { statsError })
     }
 
     const stats = (statsData as UserStats | null) || { user_id: profile.id, xp: 0 }
@@ -88,10 +89,10 @@ export async function GET() {
       progress,
     }
 
-    return NextResponse.json(response)
+    return successResponse(response)
   } catch (err) {
-    console.error('[api/user/stats] unexpected error', err)
-    return NextResponse.json({ error: 'Unexpected server error' }, { status: 500 })
+    logger.error('[api/user/stats] unexpected error', err)
+    return errorResponse('Unexpected server error', 500, undefined, { err })
   }
 }
 
@@ -101,7 +102,7 @@ export async function PATCH(request: Request) {
 
     const { data: userData } = await supabase.auth.getUser()
     const user = (userData as any)?.user
-    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    if (!user) return errorResponse('Not authenticated', 401)
 
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
@@ -110,19 +111,19 @@ export async function PATCH(request: Request) {
       .maybeSingle()
 
     if (profileError) {
-      console.error('[api/user/stats PATCH] profile error', profileError)
-      return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
+      logger.error('[api/user/stats PATCH] profile error', profileError)
+      return errorResponse('Failed to fetch profile', 500, undefined, { profileError })
     }
 
     const profile = profileData as Profile | null
-    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    if (!profile) return errorResponse('Profile not found', 404)
 
     const body = await request.json().catch(() => ({}))
     const delta = typeof body?.delta === 'number' ? body.delta : undefined
     const xpSet = typeof body?.xp === 'number' ? body.xp : undefined
 
     if (delta === undefined && xpSet === undefined) {
-      return NextResponse.json({ error: 'Provide `delta` or `xp` in request body' }, { status: 400 })
+      return errorResponse('Provide `delta` or `xp` in request body', 400)
     }
 
     const { data: statsData, error: statsError } = await supabase
@@ -132,8 +133,8 @@ export async function PATCH(request: Request) {
       .maybeSingle()
 
     if (statsError) {
-      console.error('[api/user/stats PATCH] stats error', statsError)
-      return NextResponse.json({ error: 'Failed to fetch user stats' }, { status: 500 })
+      logger.error('[api/user/stats PATCH] stats error', statsError)
+      return errorResponse('Failed to fetch user stats', 500, undefined, { statsError })
     }
 
     const currentXp = (statsData as UserStats | null)?.xp ?? 0
@@ -146,8 +147,8 @@ export async function PATCH(request: Request) {
       .maybeSingle()
 
     if (upsertError) {
-      console.error('[api/user/stats PATCH] upsert error', upsertError)
-      return NextResponse.json({ error: 'Failed to update user stats' }, { status: 500 })
+      logger.error('[api/user/stats PATCH] upsert error', upsertError)
+      return errorResponse('Failed to update user stats', 500, undefined, { upsertError })
     }
 
     // Resolve rank after trigger
@@ -168,9 +169,9 @@ export async function PATCH(request: Request) {
       rank = rankByXp as Rank | null
     }
 
-    return NextResponse.json({ stats: upserted, rank })
+    return successResponse({ stats: upserted, rank })
   } catch (err) {
-    console.error('[api/user/stats PATCH] unexpected error', err)
-    return NextResponse.json({ error: 'Unexpected server error' }, { status: 500 })
+    logger.error('[api/user/stats PATCH] unexpected error', err)
+    return errorResponse('Unexpected server error', 500, undefined, { err })
   }
 }

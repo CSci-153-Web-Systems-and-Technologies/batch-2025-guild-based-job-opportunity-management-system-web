@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { errorResponse, successResponse } from '@/lib/api-response'
+import * as logger from '@/lib/logger'
 
 export async function POST(req: Request) {
   try {
@@ -7,14 +8,14 @@ export async function POST(req: Request) {
     const { auth_id, email, first_name, last_name } = body || {}
 
     if (!auth_id) {
-      return NextResponse.json({ error: 'auth_id is required' }, { status: 400 })
+      return errorResponse('auth_id is required', 400)
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !serviceKey) {
-      return NextResponse.json({ error: 'Service role key not configured' }, { status: 500 })
+      return errorResponse('Service role key not configured', 500)
     }
 
     const supabase = createSupabaseClient(supabaseUrl, serviceKey)
@@ -23,13 +24,15 @@ export async function POST(req: Request) {
     try {
       const { data: existingUser, error: userErr } = await supabase.auth.admin.getUserById(auth_id)
       if (userErr) {
-        return NextResponse.json({ error: 'auth user not found' }, { status: 404 })
+        logger.error('[api/profiles/upsert] auth lookup failed', userErr)
+        return errorResponse('auth user not found', 404, undefined, { userErr })
       }
       if (!existingUser) {
-        return NextResponse.json({ error: 'auth user not found' }, { status: 404 })
+        return errorResponse('auth user not found', 404)
       }
-    } catch {
-      return NextResponse.json({ error: 'failed to validate auth user' }, { status: 500 })
+    } catch (e) {
+      logger.error('[api/profiles/upsert] auth lookup unexpected error', e)
+      return errorResponse('failed to validate auth user', 500, undefined, { e })
     }
 
     const { data, error } = await supabase
@@ -38,11 +41,13 @@ export async function POST(req: Request) {
       .select('*')
 
     if (error) {
-      return NextResponse.json({ error: error.message || error }, { status: 500 })
+      logger.error('[api/profiles/upsert] upsert error', error)
+      return errorResponse(error.message || String(error), 500, undefined, { error })
     }
 
-    return NextResponse.json({ data })
+    return successResponse({ data })
   } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Unknown error' }, { status: 500 })
+    logger.error('[api/profiles/upsert] unexpected', err)
+    return errorResponse(err instanceof Error ? err.message : 'Unknown error', 500, undefined, { err })
   }
 }

@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/server'
+import { errorResponse, successResponse } from '@/lib/api-response'
+import * as logger from '@/lib/logger'
 
 export async function GET() {
   try {
@@ -7,7 +8,7 @@ export async function GET() {
 
     const { data: userData } = await supabase.auth.getUser()
     const user = (userData as any)?.user
-    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    if (!user) return errorResponse('Not authenticated', 401)
 
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
@@ -16,12 +17,12 @@ export async function GET() {
       .maybeSingle()
 
     if (profileError) {
-      console.error('[api/dashboard/summary] profile error', profileError)
-      return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
+      logger.error('[api/dashboard/summary] profile error', profileError)
+      return errorResponse('Failed to fetch profile', 500, undefined, { profileError })
     }
 
     const profile = profileData as any | null
-    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    if (!profile) return errorResponse('Profile not found', 404)
 
     // Parties total
     const { count: partiesCount } = await supabase.from('parties').select('id', { count: 'exact' })
@@ -114,9 +115,9 @@ export async function GET() {
       openQuestsCount: openQuestsCount ?? 0,
     }
 
-    return NextResponse.json(response)
+    return successResponse(response)
   } catch (err) {
-    console.error('[api/dashboard/summary] unexpected error', err)
-    return NextResponse.json({ error: 'Unexpected server error' }, { status: 500 })
+    logger.error('[api/dashboard/summary] unexpected error', err)
+    return errorResponse('Unexpected server error', 500, undefined, { err })
   }
 }

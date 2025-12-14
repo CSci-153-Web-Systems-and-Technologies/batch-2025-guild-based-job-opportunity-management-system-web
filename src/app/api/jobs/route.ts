@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/server'
+import { errorResponse, successResponse } from '@/lib/api-response'
+import * as logger from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   try {
@@ -57,13 +59,15 @@ export async function GET(req: NextRequest) {
     const { data: jobs, error } = await query
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      logger.error('[api/jobs] supabase error', error)
+      return errorResponse(error.message ?? 'Failed to fetch jobs', 500, undefined, { error })
     }
 
-    return NextResponse.json({ jobs: jobs ?? [] })
+    return successResponse({ jobs: jobs ?? [] })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: message }, { status: 500 })
+    logger.error('[api/jobs] unexpected', err)
+    return errorResponse(message, 500, undefined, { err })
   }
 }
 
