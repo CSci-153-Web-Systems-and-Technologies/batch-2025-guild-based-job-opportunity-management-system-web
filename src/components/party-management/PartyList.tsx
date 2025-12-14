@@ -156,6 +156,68 @@ export default function PartyList({ isCreatePartyOpen = false, onCreatePartyOpen
     }
   }, [])
 
+  // Open party modal if `partyId` query param present (e.g., from topbar search)
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href)
+      const partyId = url.searchParams.get('partyId')
+      if (partyId) {
+        ;(async () => {
+          try {
+            const res = await fetch(`/api/parties/${encodeURIComponent(partyId)}`)
+            const json = await res.json()
+            if (!res.ok) {
+              // couldn't fetch the party, do nothing
+              return
+            }
+
+            const party = json.party
+            let members = json.members ?? []
+
+            // normalize profiles shape on members
+            members = (members ?? []).map((m: any) => ({ ...m, profiles: Array.isArray(m.profiles) ? m.profiles[0] ?? null : m.profiles }))
+
+            // normalize party-level profiles array
+            if (Array.isArray(party.profiles)) party.profiles = party.profiles[0] ?? null
+
+            // insert or replace party in parties list
+            setParties((prev) => {
+              try {
+                const exists = (prev || []).some((p) => String(p.id) === String(party.id))
+                if (exists) return (prev || []).map((p) => (String(p.id) === String(party.id) ? party : p))
+                return [party, ...(prev || [])]
+              } catch {
+                return prev
+              }
+            })
+
+            // set members map
+            setMembersMap((prev) => ({ ...prev, [String(party.id)]: members }))
+
+            // update profileNameMap with member and leader display names
+            setProfileNameMap((prev) => {
+              const next = { ...prev }
+              ;(members ?? []).forEach((m: any) => {
+                const pid = m.user_id
+                const display = m.profiles?.display_name
+                if (pid && display) next[pid] = display
+              })
+              if (party.profiles && party.profiles.display_name && party.leader_id) next[party.leader_id] = party.profiles.display_name
+              return next
+            })
+
+            // now open the modal
+            setSelectedPartyId(String(party.id))
+          } catch {
+            // ignore
+          }
+        })()
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
   if (loading)
     return (
       <div className="flex items-center justify-center py-8">
@@ -264,6 +326,9 @@ export default function PartyList({ isCreatePartyOpen = false, onCreatePartyOpen
       console.error('Failed to fetch members for party', err)
     }
   }
+
+  // Open party modal if `partyId` query param present (e.g., from topbar search)
+  
 
   return (
     <>

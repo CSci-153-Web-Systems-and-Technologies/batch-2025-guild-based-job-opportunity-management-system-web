@@ -4,15 +4,20 @@ import * as React from 'react'
 import Image from 'next/image'
 import SearchIcon from '@/assets/icons/search.png'
 import NotificationIcon from '@/assets/icons/notification.png'
-import { createClient } from '@/lib/client'
-import { ensureProfile } from '@/lib/profile'
+import { useRouter } from 'next/navigation'
+
+type SearchItem = { id: string; title: string; type: 'job' | 'party'; subtitle?: string }
 
 export function Topbar() {
+  const router = useRouter()
   const [query, setQuery] = React.useState('')
   const [focused, setFocused] = React.useState(false)
-  const [notifCount] = React.useState(3)
-  const [firstName, setFirstName] = React.useState<string | null>(null)
-  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null)
+  const [notifOpen, setNotifOpen] = React.useState(false)
+  const [notifications, setNotifications] = React.useState<Array<{ id: string; text: string; read?: boolean }>>([
+    { id: 'n1', text: 'Your application for "Monster Slayer" was accepted', read: false },
+    { id: 'n2', text: 'New comment on your party', read: false },
+  ])
+  const [searchResults, setSearchResults] = React.useState<SearchItem[]>([])
   const debounceRef = React.useRef<number | null>(null)
 
   React.useEffect(() => {
@@ -20,99 +25,46 @@ export function Topbar() {
       const url = new URL(window.location.href)
       const q = url.searchParams.get('q') || ''
       setQuery(q)
-    } catch {
-
-    }
-  }, [])
-
-  React.useEffect(() => {
-    // Try to read the profile row by auth_id first (non-destructive). If not found,
-    // fall back to ensureProfile() which will upsert a profile safely.
-    let mounted = true
-    ;(async () => {
-      try {
-        const supabase = createClient()
-        const { data: userData } = await supabase.auth.getUser()
-        const user = (userData as unknown as { user?: { id: string; email?: string; user_metadata?: unknown } })?.user
-        if (!user) return
-
-        // Try to select profile by auth_id
-        try {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('auth_id', user.id)
-            .single()
-
-          if (!mounted) return
-
-            if (profileError) {
-            // Could be table missing or RLS blocking - fall back to ensureProfile
-            const profile = await ensureProfile()
-            if (!mounted) return
-            if (profile) {
-              setFirstName(profile.first_name || (profile.display_name || profile.email || '').toString().split(' ')[0] || null)
-              setAvatarUrl(profile.avatar_url || null)
-            } else {
-              // Final fallback to user metadata
-                const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
-                const full = (meta.full_name as string | undefined) || (meta.name as string | undefined) || (meta.first_name as string | undefined) || user.email || ''
-                const first = (full || '').toString().split(' ')[0] || null
-                setFirstName(first)
-                setAvatarUrl((meta.avatar_url as string | undefined) || (meta.avatar as string | undefined) || null)
-            }
-          } else if (profileData) {
-            setFirstName(profileData.first_name || (profileData.display_name || profileData.email || '').toString().split(' ')[0] || null)
-            setAvatarUrl(profileData.avatar_url || null)
-          } else {
-            // No profile row found - create one
-            const profile = await ensureProfile()
-            if (!mounted) return
-            if (profile) {
-              setFirstName(profile.first_name || (profile.display_name || profile.email || '').toString().split(' ')[0] || null)
-              setAvatarUrl(profile.avatar_url || null)
-            }
-          }
-        } catch {
-          // On any unexpected error, attempt ensureProfile and fallback to user metadata
-          const profile = await ensureProfile()
-          if (!mounted) return
-          if (profile) {
-            setFirstName(profile.first_name || (profile.display_name || profile.email || '').toString().split(' ')[0] || null)
-            setAvatarUrl(profile.avatar_url || null)
-          } else {
-            const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
-            const full = (meta.full_name as string | undefined) || (meta.name as string | undefined) || (meta.first_name as string | undefined) || user.email || ''
-            const first = (full || '').toString().split(' ')[0] || null
-            setFirstName(first)
-            setAvatarUrl((meta.avatar_url as string | undefined) || (meta.avatar as string | undefined) || null)
-          }
-        }
-      } catch {
-        // ignore
-      }
-    })()
-    return () => { mounted = false }
+    } catch {}
   }, [])
 
   const onChange = (value: string) => {
     setQuery(value)
-
     if (debounceRef.current) window.clearTimeout(debounceRef.current)
 
-    debounceRef.current = window.setTimeout(() => {
+    debounceRef.current = window.setTimeout(async () => {
       try {
-        const url = new URL(window.location.href)
-        if (value) url.searchParams.set('q', value)
-        else url.searchParams.delete('q')
-        window.history.replaceState({}, '', url.toString())
-      } catch {
+        if (!value) {
+          setSearchResults([])
+          return
+        }
+
+        // fetch jobs and parties and do a simple client-side filter
+        const jobsRes = await fetch('/api/jobs')
+        const partiesRes = await fetch('/api/parties')
+        const jobsJson = await jobsRes.json()
+        const partiesJson = await partiesRes.json()
+
+        const jobs = (jobsJson.jobs || []).filter((j: any) => {
+          const t = (j.title || '') + ' ' + (j.company_name || j.company || '')
+          return String(t).toLowerCase().includes(value.toLowerCase())
+        }).slice(0, 6).map((j: any) => ({ id: String(j.id), title: j.title || 'Untitled', type: 'job' as const, subtitle: j.company_name || j.company }))
+
+        const parties = (partiesJson.parties || []).filter((p: any) => {
+          return String(p.name || '').toLowerCase().includes(value.toLowerCase())
+        }).slice(0, 6).map((p: any) => ({ id: String(p.id), title: p.name, type: 'party' as const, subtitle: p.category || '' }))
+
+        setSearchResults([...jobs, ...parties].slice(0, 8))
+      } catch (err) {
+        // ignore search errors for now
+        setSearchResults([])
       }
-    }, 350)
+    }, 300)
   }
 
   const clear = () => {
     setQuery('')
+    setSearchResults([])
     try {
       const url = new URL(window.location.href)
       url.searchParams.delete('q')
@@ -120,12 +72,31 @@ export function Topbar() {
     } catch {}
   }
 
+  const handleSelect = (item: SearchItem) => {
+    // route to questboard or party-management and include id as param so target page can open modal
+    if (item.type === 'job') {
+      router.push(`/questboard?jobId=${encodeURIComponent(item.id)}`)
+    } else {
+      router.push(`/party-management?partyId=${encodeURIComponent(item.id)}`)
+    }
+  }
+
+  const unreadCount = notifications.filter((n) => !n.read).length
+
+  const toggleNotif = () => {
+    setNotifOpen((v) => !v)
+  }
+
+  const markRead = (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+  }
+
   return (
     <div className="flex items-center justify-between py-4 px-6 border-b border-border bg-transparent">
       {/* Left: greeting */}
       <div className="flex items-center">
         <span className="text-3xl font-bold text-[#6EE7B7]">Good morning,&nbsp;</span>
-        <span className="text-3xl font-bold text-white">{firstName || 'User'}</span>
+        <span className="text-3xl font-bold text-white">User</span>
       </div>
       <div className="flex items-center gap-4 transform">
         <div className="relative">
@@ -135,7 +106,7 @@ export function Topbar() {
             value={query}
             onChange={(e) => onChange(e.target.value)}
             onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
+            onBlur={() => setTimeout(() => setFocused(false), 150)}
             className="
               w-120
               h-12
@@ -155,7 +126,6 @@ export function Topbar() {
               WebkitBackdropFilter: "blur(10px)",
               backdropFilter: "blur(10px)",
             }}
-
           />
 
           <span className="absolute inset-y-0 left-3 flex items-center gap-2 pointer-events-none z-30">
@@ -168,27 +138,74 @@ export function Topbar() {
           {query ? (
             <button onClick={clear} className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-white/70 bg-white/6 hover:bg-white/10 rounded-full w-6 h-6 flex items-center justify-center">✕</button>
           ) : null}
+
+          {/* Dropdown */}
+          {(focused || searchResults.length > 0) && (
+            <div className="absolute left-0 mt-2 w-96 bg-white/6 border border-white/10 rounded-lg shadow-lg backdrop-blur-md z-40 overflow-hidden">
+              {searchResults.length === 0 ? (
+                <div className="p-3 text-white/60">No results</div>
+              ) : (
+                <ul>
+                  {searchResults.map((r) => (
+                    <li key={`${r.type}-${r.id}`}>
+                      <button onMouseDown={(e) => { e.preventDefault(); handleSelect(r) }} className="w-full text-left p-3 hover:bg-white/10 flex items-center gap-3">
+                        <span className="text-xs px-2 py-1 rounded-full bg-white/10 text-white/90">{r.type === 'job' ? 'Quest' : 'Party'}</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-white">{r.title}</div>
+                          {r.subtitle ? <div className="text-xs text-white/60">{r.subtitle}</div> : null}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
-        <button
-          aria-label="Notifications"
-          title="Notifications"
-          className="w-12 h-12 relative p-2 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_4px_8px_rgba(0,0,0,0.25)] backdrop-blur-md flex items-center justify-center"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))",
-            WebkitBackdropFilter: "blur(8px)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          <Image src={NotificationIcon} alt="Notifications" width={20} height={20} className="object-contain" />
-          {notifCount > 0 ? (
-            <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-[10px] font-semibold text-white border border-white/20">
-              {notifCount > 99 ? '99+' : notifCount}
-            </span>
-          ) : null}
-        </button>
+
+        <div className="relative">
+          <button
+            aria-label="Notifications"
+            title="Notifications"
+            onClick={toggleNotif}
+            className="w-12 h-12 relative p-2 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_4px_8px_rgba(0,0,0,0.25)] backdrop-blur-md flex items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))",
+              WebkitBackdropFilter: "blur(8px)",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <Image src={NotificationIcon} alt="Notifications" width={20} height={20} className="object-contain" />
+            {unreadCount > 0 ? (
+              <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-[10px] font-semibold text-white border border-white/20">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            ) : null}
+          </button>
+
+          {notifOpen && (
+            <div className="absolute right-0 mt-2 w-80 bg-white/6 border border-white/10 rounded-lg shadow-lg backdrop-blur-md z-40 overflow-hidden">
+              <div className="p-3 border-b border-white/10 text-white font-semibold">Notifications</div>
+              <ul>
+                {notifications.length === 0 && <li className="p-3 text-white/60">No notifications</li>}
+                {notifications.map((n) => (
+                  <li key={n.id} className="p-3 hover:bg-white/10 flex items-start gap-3">
+                    <div className="flex-1">
+                      <div className={`text-sm ${n.read ? 'text-white/60' : 'text-white'}`}>{n.text}</div>
+                      {!n.read && (
+                        <button onClick={() => markRead(n.id)} className="text-xs text-white/60 mt-1">Mark read</button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
         <button
           aria-label="Profile"
-          title={firstName ? `${firstName}'s profile` : 'Profile'}
+          title={'Profile'}
           className="ml-2 flex items-center gap-3 px-3 h-12 w-40 rounded-full bg-white/6 hover:bg-white/10 border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.25)] backdrop-blur-md"
           style={{
             background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))",
@@ -196,18 +213,8 @@ export function Topbar() {
             backdropFilter: "blur(8px)",
           }}
         >
-          {avatarUrl ? (
-            // use next/image for local/static avatars, otherwise fallback to img if external
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-white/5 flex items-center justify-center">
-              <Image src={avatarUrl} alt="Profile" width={32} height={32} className="object-cover" />
-            </div>
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold text-white">
-              {firstName ? firstName[0].toUpperCase() : 'U'}
-            </div>
-          )}
-
-          <span className="text-sm font-medium text-white/90">{firstName || 'User'}</span>
+          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold text-white">U</div>
+          <span className="text-sm font-medium text-white/90">User</span>
         </button>
       </div>
     </div>

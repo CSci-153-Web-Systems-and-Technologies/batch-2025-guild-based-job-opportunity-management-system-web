@@ -106,6 +106,21 @@ export default function JobList({ filters }: { filters?: Filters }) {
     }
   }, [fetchJobs])
 
+  // If the page was opened with a `jobId` query param, open that job's modal.
+  React.useEffect(() => {
+    try {
+      const url = new URL(window.location.href)
+      const jobId = url.searchParams.get('jobId')
+      if (jobId) {
+        // set a minimal selected job object with id; fetchJobs will refresh details
+        setSelectedJob({ id: jobId })
+        setIsModalOpen(true)
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
   // Listen for application status updates so UI can refresh (modal/slots/counts etc.)
   React.useEffect(() => {
     const handler = (_e: Event) => {
