@@ -1,3 +1,5 @@
+"use client"
+
 import React from 'react'
 import Image from 'next/image'
 import Topbar from '@/components/dashboard/Topbar'
@@ -5,7 +7,10 @@ import PartyBrowser from '@/components/party-management/PartyBrowser'
 import PartyList from '@/components/party-management/PartyList'
 import PartyIcon from '@/assets/icons/party.png'
 
-export default async function PartyManagementPage() {
+export default function PartyManagementPage() {
+  const [isCreatePartyOpen, setIsCreatePartyOpen] = React.useState(false)
+  const [filters, setFilters] = React.useState({ category: 'All Categories', level: 'All Levels' })
+
   return (
     <main className="p-6">
       <Topbar />
@@ -26,11 +31,11 @@ export default async function PartyManagementPage() {
         <p className="text-white/60 text-sm">Manage your guild teams and parties</p>
       </div>
 
-      <PartyBrowser />
+      <PartyBrowser onCreateParty={() => setIsCreatePartyOpen(true)} onFilterChange={(f) => setFilters(f)} />
 
       {/* Party Management content */}
       <section className="mt-8">
-        <PartyList />
+        <PartyList isCreatePartyOpen={isCreatePartyOpen} onCreatePartyOpenChange={setIsCreatePartyOpen} filters={filters} />
       </section>
     </main>
   )

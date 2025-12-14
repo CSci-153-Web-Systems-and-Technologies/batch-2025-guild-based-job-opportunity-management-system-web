@@ -3,6 +3,7 @@
 import * as React from 'react'
 import Image, { type StaticImageData } from 'next/image'
 import crownIcon from '@/assets/icons/crown.png'
+import { SkeletonShimmer } from '@/components/ui/skeleton'
 
 interface SummaryCardProps {
   title?: string
@@ -13,6 +14,7 @@ interface SummaryCardProps {
   iconTint?: string
   rank?: string
   experience?: number
+  isLoading?: boolean
 }
 
 export function SummaryCard({ 
@@ -23,11 +25,53 @@ export function SummaryCard({
   icon = crownIcon,
   iconTint,
   rank,
-  experience
+  experience,
+  isLoading = false,
 }: SummaryCardProps) {
   // For backward compatibility with rank/experience props
   const displayValue = value !== undefined ? value : rank ? rank.split(' ')[0].toUpperCase() : ''
   const displaySubtitle = subtitle || (experience !== undefined ? `${experience} available EXP` : '')
+
+  const textRef = React.useRef<HTMLHeadingElement | null>(null)
+  const containerRef = React.useRef<HTMLDivElement | null>(null)
+  const defaultFontSize = 44 // px
+  const minFontSize = 12 // px
+  const [fontSizePx, setFontSizePx] = React.useState<number | null>(null)
+
+  React.useLayoutEffect(() => {
+    const node = textRef.current
+    const container = containerRef.current
+    if (!node || !container) {
+      setFontSizePx(defaultFontSize)
+      return
+    }
+
+    // Start from default and reduce until it fits or reaches min
+    let fs = defaultFontSize
+    node.style.fontSize = `${fs}px`
+    let safety = 0
+    while (node.scrollWidth > container.clientWidth && fs > minFontSize && safety < 200) {
+      fs -= 1
+      node.style.fontSize = `${fs}px`
+      safety += 1
+    }
+    setFontSizePx(fs)
+
+    // Observe container size changes and re-fit
+    const ro = new ResizeObserver(() => {
+      let f = defaultFontSize
+      node.style.fontSize = `${f}px`
+      let it = 0
+      while (node.scrollWidth > container.clientWidth && f > minFontSize && it < 200) {
+        f -= 1
+        node.style.fontSize = `${f}px`
+        it += 1
+      }
+      setFontSizePx(f)
+    })
+    ro.observe(container)
+    return () => ro.disconnect()
+  }, [displayValue])
 
   return (
     <div 
@@ -78,17 +122,37 @@ export function SummaryCard({
         </div>
       </div>
 
-      {/* Content */}
-      <div className="text-left z-10 w-full">
-        {/* Rank Name */}
-        <h2 className="text-4xl font-bold text-white mb-1">
-          {displayValue}
-        </h2>
+      {/* Content: use a fixed min-height and bottom alignment so value/subtitle align across cards */}
+      <div className="text-left z-10 w-full flex flex-col justify-end" style={{ minHeight: 72 }}>
+        {/* Rank Name - shrink-to-fit using JS so the text scales down instead of being truncated */}
+        <div ref={containerRef} style={{ width: '100%' }}>
+          {isLoading ? (
+            <SkeletonShimmer width="100%" height="44px" className="mb-1" />
+          ) : (
+            <h2
+              ref={textRef}
+              className="font-bold text-white mb-1"
+              style={{
+                fontSize: `${fontSizePx ?? defaultFontSize}px`,
+                lineHeight: 1,
+                whiteSpace: 'nowrap',
+                overflow: 'visible',
+              }}
+              title={typeof displayValue === 'string' ? displayValue : String(displayValue)}
+            >
+              {displayValue}
+            </h2>
+          )}
+        </div>
 
-        {/* Available EXP */}
-        <p className="text-sm font-medium text-white/60">
-          {displaySubtitle}
-        </p>
+        {/* Available EXP / subtitle */}
+        {isLoading ? (
+          <SkeletonShimmer width="80%" height="16px" className="mt-1" />
+        ) : (
+          <p className="text-sm font-medium text-white/60 mt-1">
+            {displaySubtitle}
+          </p>
+        )}
       </div>
     </div>
   )

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import FilterIcon from '@/assets/icons/filter.png'
 
 interface QuestFilterProps {
@@ -10,30 +11,48 @@ interface QuestFilterProps {
     category: string
     datePosted: string
   }) => void
+  isAdmin?: boolean
 }
 
-const difficulties = ['All Difficulties', 'Beginner', 'Intermediate', 'Advanced', 'Expert']
+// Keep 'All Difficulties' as the default option so server-side code
+// can detect the default label; then list the requested ranks.
+const difficulties = [
+  'All Difficulties',
+  'Beginner',
+  'Apprentice',
+  'Specialist',
+  'Expert',
+  'Master',
+  'Grandmaster',
+]
 const categories = ['All Categories', 'Web Development', 'Mobile Development', 'Data Science', 'UI/UX Design', 'DevOps', 'Other']
 
-export default function QuestFilter({ onFilterChange }: QuestFilterProps) {
+export default function QuestFilter({ onFilterChange, isAdmin }: QuestFilterProps) {
   const [difficulty, setDifficulty] = useState('All Difficulties')
   const [category, setCategory] = useState('All Categories')
   const [datePosted, setDatePosted] = useState('Recent')
+  // Debounce filter changes to avoid firing too many requests during quick user input
+  const DEBOUNCE_MS = 250
 
   const handleDifficultyChange = (value: string) => {
     setDifficulty(value)
-    onFilterChange?.({ difficulty: value, category, datePosted })
   }
 
   const handleCategoryChange = (value: string) => {
     setCategory(value)
-    onFilterChange?.({ difficulty, category: value, datePosted })
   }
 
   const handleDateChange = (value: string) => {
     setDatePosted(value)
-    onFilterChange?.({ difficulty, category, datePosted: value })
   }
+
+  React.useEffect(() => {
+    const id = setTimeout(() => {
+      onFilterChange?.({ difficulty, category, datePosted })
+    }, DEBOUNCE_MS)
+
+    return () => clearTimeout(id)
+  }, [difficulty, category, datePosted, onFilterChange])
 
   return (
     <div 
@@ -44,10 +63,20 @@ export default function QuestFilter({ onFilterChange }: QuestFilterProps) {
         backdropFilter: "blur(10px)",
       }}
     >
-      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-        <Image src={FilterIcon} alt="Filter" width={24} height={24} className="object-contain invert" />
-        Filter Quests
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <Image src={FilterIcon} alt="Filter" width={24} height={24} className="object-contain invert" />
+          Filter Quests
+        </h2>
+        {isAdmin && (
+          <Link
+            href="/admin/jobs"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#10BCD2] text-white font-medium text-sm shadow-lg shadow-[#10BCD2]/50 hover:shadow-xl hover:shadow-[#10BCD2]/75 transition-shadow duration-200"
+          >
+            ⚙️ Manage Quests
+          </Link>
+        )}
+      </div>
 
       <div className="flex flex-col md:flex-row gap-4">
         {/* Difficulty Dropdown */}

@@ -1,5 +1,6 @@
 import React from 'react'
 import Sidebar from '@/components/dashboard/Sidebar'
+import AdminRedirectGuard from '@/components/auth/AdminRedirectGuard'
 import { createClient as createServerClient } from '@/lib/server'
 import { redirect } from 'next/navigation'
 
@@ -10,10 +11,10 @@ export const metadata = {
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Server-side auth protection: redirect if no active session
   const supabase = await createServerClient()
-  const { data } = await supabase.auth.getSession()
-  const session = data?.session
+  const { data } = await supabase.auth.getUser()
+  const user = data?.user
 
-  if (!session) {
+  if (!user) {
     redirect('/auth/login')
   }
 
@@ -21,6 +22,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div
       className="min-h-screen flex bg-gradient-to-br from-[#081A21] via-[#0d2635] to-[#164557]"
     >
+      {/* client-side guard: if a newly-promoted admin somehow reaches /dashboard,
+          redirect them immediately to /admin for a smoother UX */}
+      <AdminRedirectGuard />
       {/* Sidebar (hidden on small screens) */}
       <Sidebar userRole="user" />
 

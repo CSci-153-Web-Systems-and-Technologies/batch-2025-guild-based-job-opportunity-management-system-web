@@ -1,45 +1,44 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 interface LeaderboardEntry {
   rank: number
   name: string
-  email: string
-  level: string
-  partyName: string
+  email?: string
+  level?: string | null
+  partyName?: string | null
   totalExp: number
 }
 
-const mockLeaderboardData: LeaderboardEntry[] = [
-  {
-    rank: 4,
-    name: "Yeyel029",
-    email: "daniuscairoy@gmail.com",
-    level: "Beginner Adventurer",
-    partyName: "Studio 402",
-    totalExp: 356
-  },
-  {
-    rank: 5,
-    name: "Yeyel029",
-    email: "daniuscairoy@gmail.com",
-    level: "Beginner Adventurer",
-    partyName: "Studio 402",
-    totalExp: 356
-  },
-  {
-    rank: 6,
-    name: "Yeyel029",
-    email: "daniuscairoy@gmail.com",
-    level: "Beginner Adventurer",
-    partyName: "Studio 402",
-    totalExp: 356
-  },
-]
-
 export default function FullLeaderboardTable() {
   const [hover, setHover] = useState(false)
+  const [rows, setRows] = useState<LeaderboardEntry[]>([])
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetch('/api/leaderboard?limit=50')
+        if (!mounted) return
+        if (!res.ok) return
+        const json = await res.json()
+        const mapped = (json || []).map((r: any) => ({
+          rank: r.rank,
+          name: r.profile?.display_name || r.profile?.first_name || 'Unknown',
+          email: r.profile?.email ?? '',
+          level: r.rank_name ?? 'Adventurer',
+          partyName: r.party_name ?? '—',
+          totalExp: r.xp || 0,
+        }))
+        setRows(mapped)
+      } catch (err) {
+        // ignore fetch errors for now
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
+
   return (
     <section className="mt-8 mb-8">
       <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-slate-700/50 overflow-hidden shadow-2xl backdrop-blur-sm">
@@ -64,9 +63,9 @@ export default function FullLeaderboardTable() {
 
         {/* Table Body */}
         <div className="divide-y divide-slate-700/30">
-          {mockLeaderboardData.map((entry) => (
+          {rows.map((entry) => (
             <div
-              key={entry.rank}
+              key={`${entry.rank}-${entry.name}`}
               className="grid grid-cols-12 gap-4 px-8 py-5 items-center hover:bg-slate-700/20 transition-colors group"
             >
               {/* Rank */}
@@ -78,12 +77,14 @@ export default function FullLeaderboardTable() {
               <div className="col-span-4 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400 flex-shrink-0 flex items-center justify-center">
                   <div className="w-full h-full rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-lg font-bold text-white">
-                    {entry.name[0]}
+                    {entry.name ? entry.name[0] : '?'}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-white truncate">{entry.name}</p>
-                  <p className="text-xs text-slate-400 truncate">{entry.email}</p>
+                  {entry.email && entry.email.includes('@') ? (
+                    <p className="text-xs text-slate-400 truncate">{entry.email}</p>
+                  ) : null}
                 </div>
               </div>
 

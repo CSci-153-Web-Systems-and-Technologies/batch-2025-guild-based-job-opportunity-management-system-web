@@ -8,32 +8,25 @@ interface PartyBrowserProps {
   onFilterChange?: (filters: {
     category: string
     level: string
-    role: string
   }) => void
+  onCreateParty?: () => void
 }
 
 const categories = ['All Categories', 'Web Development', 'Mobile Development', 'Data Science', 'UI/UX Design', 'DevOps', 'Other']
-const levels = ['All Levels', 'Beginner', 'Intermediate', 'Advanced', 'Expert']
-const roles = ['All Roles', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer', 'Data Scientist', 'DevOps Engineer', 'UI/UX Designer']
+const levels = ['All Levels', 'Beginner', 'Apprentice', 'Specialist', 'Expert', 'Master', 'Grandmaster']
 
-export default function PartyBrowser({ onFilterChange }: PartyBrowserProps) {
+export default function PartyBrowser({ onFilterChange, onCreateParty }: PartyBrowserProps) {
   const [category, setCategory] = useState('All Categories')
   const [level, setLevel] = useState('All Levels')
-  const [role, setRole] = useState('All Roles')
 
   const handleCategoryChange = (value: string) => {
     setCategory(value)
-    onFilterChange?.({ category: value, level, role })
+    onFilterChange?.({ category: value, level })
   }
 
   const handleLevelChange = (value: string) => {
     setLevel(value)
-    onFilterChange?.({ category, level: value, role })
-  }
-
-  const handleRoleChange = (value: string) => {
-    setRole(value)
-    onFilterChange?.({ category, level, role: value })
+    onFilterChange?.({ category, level: value })
   }
 
   return (
@@ -56,7 +49,7 @@ export default function PartyBrowser({ onFilterChange }: PartyBrowserProps) {
           />
           <h2 className="text-xl font-bold text-white">Browse Party</h2>
         </div>
-        <button className="px-6 py-2 rounded-lg text-white font-medium transition-colors" style={{ backgroundColor: '#10BCD2', boxShadow: '0 0 12px rgba(16, 188, 210, 0.4)' }} onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 18px rgba(16, 188, 210, 0.6)'} onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 0 12px rgba(16, 188, 210, 0.4)'}>
+        <button className="px-6 py-2 rounded-lg text-white font-medium transition-colors" style={{ backgroundColor: '#10BCD2', boxShadow: '0 0 12px rgba(16, 188, 210, 0.4)' }} onClick={onCreateParty} onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 18px rgba(16, 188, 210, 0.6)'} onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 0 12px rgba(16, 188, 210, 0.4)'}>
           + Create Party
         </button>
       </div>
@@ -85,7 +78,7 @@ export default function PartyBrowser({ onFilterChange }: PartyBrowserProps) {
 
         {/* Level Dropdown */}
         <div className="flex-1">
-          <label className="block text-sm font-medium text-white/80 mb-2">Party Level</label>
+          <label className="block text-sm font-medium text-white/80 mb-2">Rank Requirement</label>
           <select
             value={level}
             onChange={(e) => handleLevelChange(e.target.value)}
@@ -99,27 +92,6 @@ export default function PartyBrowser({ onFilterChange }: PartyBrowserProps) {
             {levels.map((lvl) => (
               <option key={lvl} value={lvl} className="bg-[#081A21]">
                 {lvl}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Role Requirement Dropdown */}
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-white/80 mb-2">Role Requirement</label>
-          <select
-            value={role}
-            onChange={(e) => handleRoleChange(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg text-white hover:bg-white/15 focus:outline-none focus:border-[#6EE7B7] transition border border-white/20 shadow-[0_4px_8px_rgba(0,0,0,0.25)]"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03))",
-              WebkitBackdropFilter: "blur(8px)",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            {roles.map((r) => (
-              <option key={r} value={r} className="bg-[#081A21]">
-                {r}
               </option>
             ))}
           </select>

@@ -17,7 +17,10 @@ export function WelcomeSection() {
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null)
   const [rank, setRank] = React.useState<string>('Beginner Adventurer')
   const [experience, setExperience] = React.useState<number>(0)
-
+  const [finishedJobs, setFinishedJobs] = React.useState<number | null>(null)
+  const [availableParties, setAvailableParties] = React.useState<number | null>(null)
+  const [openQuests, setOpenQuests] = React.useState<number | null>(null)
+  const [isLoadingSummary, setIsLoadingSummary] = React.useState(true)
   React.useEffect(() => {
     let mounted = true
     ;(async () => {
@@ -28,56 +31,59 @@ export function WelcomeSection() {
         if (!user) return
 
         try {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('auth_id', user.id)
-            .single()
+          const res = await fetch('/api/dashboard/summary')
+          if (res.ok) {
+            const json = await res.json()
+            if (!mounted) return
+            const p = json.profile || {}
+            const display = p.display_name || `${p.first_name || ''} ${p.last_name || ''}`.trim()
+            setFirstName(display ? display.split(' ')[0] : null)
+            setLastName(display ? display.split(' ').slice(1).join(' ') : null)
+            setAvatarUrl(p.avatar_url || null)
 
-          if (!mounted) return
+            if (json.rank && json.rank.name) setRank(json.rank.name)
+            if (typeof json.xp === 'number') setExperience(json.xp)
+
+            setFinishedJobs(typeof json.finishedJobsCount === 'number' ? json.finishedJobsCount : json.finished_jobs_count ?? null)
+            setAvailableParties(typeof json.partiesCount === 'number' ? json.partiesCount : json.parties_count ?? null)
+            setOpenQuests(typeof json.openQuestsCount === 'number' ? json.openQuestsCount : json.open_quests_count ?? null)
+            setIsLoadingSummary(false)
+          } else {
+            setIsLoadingSummary(false)
+            // fallback: original profile logic if the summary endpoint fails
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('auth_id', user.id)
+              .single()
+
+            if (!mounted) return
 
             if (profileError) {
-            const profile = await ensureProfile()
-            if (!mounted) return
-            if (profile) {
-              setFirstName(profile.first_name || null)
-              setLastName(profile.last_name || null)
-              setAvatarUrl(profile.avatar_url || null)
-            } else {
-                const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
-                const fullName = ((meta.full_name as string | undefined) || (meta.name as string | undefined) || '').toString().split(' ')
-                setFirstName(fullName[0] || null)
-                setLastName(fullName[1] || null)
-                setAvatarUrl((meta.avatar_url as string | undefined) || (meta.avatar as string | undefined) || null)
-            }
-          } else if (profileData) {
-            setFirstName(profileData.first_name || null)
-            setLastName(profileData.last_name || null)
-            setAvatarUrl(profileData.avatar_url || null)
-            setRank(profileData.rank || 'Beginner Adventurer')
-            setExperience(profileData.experience || 0)
-          } else {
-            const profile = await ensureProfile()
-            if (!mounted) return
-            if (profile) {
-              setFirstName(profile.first_name || null)
-              setLastName(profile.last_name || null)
-              setAvatarUrl(profile.avatar_url || null)
+              const profile = await ensureProfile()
+              if (!mounted) return
+              if (profile) {
+                setFirstName(profile.first_name || null)
+                setLastName(profile.last_name || null)
+                setAvatarUrl(profile.avatar_url || null)
+              }
+            } else if (profileData) {
+              setFirstName(profileData.first_name || null)
+              setLastName(profileData.last_name || null)
+              setAvatarUrl(profileData.avatar_url || null)
+              setRank(profileData.rank || 'Beginner Adventurer')
+              setExperience(profileData.experience || 0)
             }
           }
-        } catch {
+        } catch (err) {
+          // fallback to ensureProfile
+          setIsLoadingSummary(false)
           const profile = await ensureProfile()
           if (!mounted) return
           if (profile) {
             setFirstName(profile.first_name || null)
             setLastName(profile.last_name || null)
             setAvatarUrl(profile.avatar_url || null)
-          } else {
-            const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
-            const fullName = ((meta.full_name as string | undefined) || (meta.name as string | undefined) || '').toString().split(' ')
-            setFirstName(fullName[0] || null)
-            setLastName(fullName[1] || null)
-            setAvatarUrl((meta.avatar_url as string | undefined) || (meta.avatar as string | undefined) || null)
           }
         }
       } catch {
@@ -123,30 +129,33 @@ export function WelcomeSection() {
 
       {/* Summary Cards */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
-        <SummaryCard rank={rank} experience={experience} iconTint="#67E8F9" />
+        <SummaryCard rank={rank} experience={experience} iconTint="#67E8F9" isLoading={isLoadingSummary} />
         <SummaryCard 
           title="Finished"
           titleLine2="Jobs"
-          value="3"
+          value={finishedJobs ?? '—'}
           subtitle="total tasks"
           icon={questBoardIcon}
           iconTint="#6EE7B7"
+          isLoading={isLoadingSummary}
         />
         <SummaryCard 
           title="Available"
           titleLine2="Parties"
-          value="7"
+          value={availableParties ?? '—'}
           subtitle="total parties available"
           icon={partyIcon}
           iconTint="#00B0DA"
+          isLoading={isLoadingSummary}
         />
         <SummaryCard 
           title="Open"
           titleLine2="Quests"
-          value="4"
+          value={openQuests ?? '—'}
           subtitle="available opportunities"
           icon={targetIcon}
           iconTint="#8B5CF6"
+          isLoading={isLoadingSummary}
         />
       </div>
     </div>

@@ -54,12 +54,11 @@ export function Sidebar({ userRole = 'user' }: SidebarProps) {
   const router = useRouter()
 
   const logoHref = userRole === 'admin' ? '/admin' : '/'
-
   const navItems: NavItem[] = userRole === 'admin'
     ? [
         { href: '/admin', label: 'Dashboard', icon: DashboardIcon },
-        { href: '/admin/jobs', label: 'Manage Jobs', icon: QuestBoardIcon },
-        { href: '/admin/invite', label: 'Invite Users', icon: PartyIcon },
+        { href: '/questboard', label: 'Questboard', icon: QuestBoardIcon },
+        { href: '/party-management', label: 'Party Management', icon: PartyIcon },
         { href: '/leaderboard', label: 'Leaderboard', icon: LeaderboardIcon },
       ]
     : [
@@ -77,9 +76,15 @@ export function Sidebar({ userRole = 'user' }: SidebarProps) {
   }
 
   // Determine the single best-matching nav href for the current pathname.
-  // This prefers the longest matching prefix so `/admin/jobs` wins over `/admin`.
+  // Special case: treat `/admin/jobs` and sub-routes as Questboard routes
   const getActiveHref = () => {
     if (!pathname) return null
+    
+    // Special case: /admin/jobs should highlight Questboard
+    if (pathname.startsWith('/admin/jobs')) {
+      return '/questboard'
+    }
+    
     let best: string | null = null
     for (const item of navItems) {
       if (pathname.startsWith(item.href)) {

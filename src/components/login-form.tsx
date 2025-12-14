@@ -59,11 +59,14 @@ export function LoginForm({ className, ...props }: HTMLMotionProps<'div'>) {
       // Best-effort: after successful login, attempt to upsert the user's profile via server
       // route which uses the Supabase service role key. This ensures profiles are created
       // even when client-side RLS prevents direct upserts.
+      let currentUser: { id: string; user_metadata?: unknown; email?: string } | null = null
+
       try {
         const supabaseClient = createClient(remember)
         const { data: userData } = await supabaseClient.auth.getUser()
         const user = (userData as unknown as { user?: { id: string; user_metadata?: unknown; email?: string } })?.user
         if (user) {
+          currentUser = user
           const meta = (user.user_metadata as unknown as Record<string, unknown>) || {}
           const payload = {
             auth_id: user.id,
@@ -83,9 +86,31 @@ export function LoginForm({ className, ...props }: HTMLMotionProps<'div'>) {
         // Non-fatal: log for debugging
         console.warn('profile upsert (post-login) failed:', err)
       }
+      // After login, prefer a direct role-based redirect to avoid extra round-trips.
+      let destination = '/dashboard'
 
-      // Redirect to dashboard after successful login.
-      router.push('/dashboard')
+      // Check user metadata first (fast path)
+      const metaRole = (currentUser as any)?.user_metadata?.role
+      if (metaRole && typeof metaRole === 'string' && metaRole === 'admin') {
+        destination = '/admin'
+      } else if (currentUser) {
+        // Fallback: ask server (uses service role key) for the authoritative role
+        try {
+          const roleRes = await fetch('/api/profiles/role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auth_id: currentUser.id }),
+          })
+          if (roleRes.ok) {
+            const roleData = await roleRes.json()
+            if (roleData?.role === 'admin') destination = '/admin'
+          }
+        } catch {
+          // ignore and default to /dashboard
+        }
+      }
+
+      router.push(destination)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {

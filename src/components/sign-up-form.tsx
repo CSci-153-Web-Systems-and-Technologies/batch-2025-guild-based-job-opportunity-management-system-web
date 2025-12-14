@@ -92,7 +92,8 @@ export function SignUpForm({ className, ...props }: HTMLMotionProps<'div'>) {
         }
       }
 
-      router.push('/auth/sign-up-success')
+      // After sign-up, send users to the normal dashboard (default role is student)
+      router.push('/dashboard')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {

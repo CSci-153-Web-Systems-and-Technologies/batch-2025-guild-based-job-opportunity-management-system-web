@@ -8,6 +8,7 @@ type Job = {
   created_at?: string | null
 }
 import Link from 'next/link'
+import JobApplications from '@/components/admin/JobApplications'
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
@@ -123,6 +124,8 @@ export default async function Page() {
             </div>
           )}
         </div>
+        {/* Job Applications Section (admin) */}
+        <JobApplications />
       </div>
     </div>
   )

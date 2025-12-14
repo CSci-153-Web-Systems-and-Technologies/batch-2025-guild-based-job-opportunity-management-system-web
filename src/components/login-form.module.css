@@ -1,24 +1,6 @@
-.glass { --is-glass: 1; }
+/* ARCHIVED BY AUDIT: login-form.module.css
+   This CSS module appeared unused in the codebase. It was replaced with this comment to avoid accidental
+   style leakage while keeping a record. Delete this file locally to permanently remove it.
+*/
 
-.glassDark {
-  background-color: rgba(0,0,0,0.28);
-  border: 1px solid rgba(0,0,0,0.16);
-  color: #ffffff;
-}
-
-.glassDark {
-  background-color: rgba(0,0,0,0.28);
-  border: 1px solid rgba(0,0,0,0.16);
-  color: #ffffff;
-}
-
-.glass input,
-.glass textarea,
-.glass select {
-  color: #ffffff;
-}
-
-.glass input::placeholder,
-.glass textarea::placeholder {
-  color: rgba(255,255,255,0.7);
-}
+/* no-op export to satisfy tooling */

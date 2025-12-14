@@ -1,12 +1,7 @@
-import type { DashboardData } from '@/types/dashboard'
+/* ARCHIVED BY AUDIT: mock-dashboard.ts
+   This file provided mock dashboard data for local development. No imports/usages were found in the codebase
+   during the audit. The file was replaced with this archival note to avoid accidental runtime usage while keeping
+   a record for history. To permanently delete this file, remove it from git locally with `git rm`.
+*/
 
-export const mockDashboard: DashboardData = [
-  { id: 'w1', title: 'Active Users', value: 1243, change: 8 },
-  { id: 'w2', title: 'Jobs Posted', value: 98, change: -2 },
-  { id: 'w3', title: 'Applications', value: 432, change: 12 },
-  { id: 'w4', title: 'Open Guilds', value: 14 },
-  { id: 'w5', title: 'Average Time to Hire', value: '21 days' },
-  { id: 'w6', title: 'New Guild Members', value: 57, change: 4 },
-]
-
-export default mockDashboard
+export {}

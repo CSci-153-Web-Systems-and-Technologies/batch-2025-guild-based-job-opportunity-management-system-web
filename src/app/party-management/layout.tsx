@@ -10,10 +10,10 @@ export const metadata = {
 export default async function PartyManagementLayout({ children }: { children: React.ReactNode }) {
   // Server-side auth protection: redirect if no active session
   const supabase = await createServerClient()
-  const { data } = await supabase.auth.getSession()
-  const session = data?.session
+  const { data } = await supabase.auth.getUser()
+  const user = data?.user
 
-  if (!session) {
+  if (!user) {
     redirect('/auth/login')
   }
 

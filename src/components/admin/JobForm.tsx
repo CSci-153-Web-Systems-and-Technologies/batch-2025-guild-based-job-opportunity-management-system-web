@@ -82,7 +82,7 @@ export default function JobForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto">
+    <form onSubmit={handleSubmit} className="w-full">
       <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 p-8 shadow-2xl">
         <div className="space-y-6">
           {/* Title Field */}
