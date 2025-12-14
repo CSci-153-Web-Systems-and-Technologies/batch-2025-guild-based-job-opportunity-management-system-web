@@ -1,24 +1,4 @@
 {
-  "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
-  "rsc": true,
-  "tsx": true,
-  "tailwind": {
-    "config": "",
-    "css": "src/app/globals.css",
-    "baseColor": "gray",
-    "cssVariables": true,
-    "prefix": ""
-  },
-  "iconLibrary": "lucide",
-  "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
-  },
-  "registries": {
-    "@supabase": "https://supabase.com/ui/r/{name}.json"
-  }
+  "archived_by_audit": true,
+  "note": "This file was identified as a generated UI config artifact and archived by the pre-production cleanup. Remove from repository if you want to permanently delete it."
 }
