@@ -31,7 +31,7 @@ export async function GET() {
     let finishedJobsCount = 0
     try {
       const { count } = await supabase
-        .from('applications')
+        .from('job_applications')
         .select('id', { count: 'exact' })
         .eq('user_id', profile.id)
         .in('status', ['completed', 'finished', 'accepted'])
@@ -40,7 +40,7 @@ export async function GET() {
       // fallback: try completed_at
       try {
         const { count } = await supabase
-          .from('applications')
+          .from('job_applications')
           .select('id', { count: 'exact' })
           .eq('user_id', profile.id)
           .not('completed_at', 'is', null)
@@ -69,7 +69,7 @@ export async function GET() {
         // fallback: total jobs - accepted/in-progress/completed applications
         const { count: totalJobs } = await supabase.from('jobs').select('id', { count: 'exact' })
         const { count: taken } = await supabase
-          .from('applications')
+          .from('job_applications')
           .select('id', { count: 'exact' })
           .in('status', ['accepted', 'in_progress', 'completed'])
         openQuestsCount = (totalJobs ?? 0) - (taken ?? 0)
