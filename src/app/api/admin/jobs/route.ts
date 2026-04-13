@@ -21,6 +21,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: Request) {
   try {
+    const adminCheck = await requireAdmin(req);
+    if (adminCheck) return adminCheck;
+
     const body = await req.json()
     const { title, description, category, reward_xp, slots, pay, location } = body || {}
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 })
