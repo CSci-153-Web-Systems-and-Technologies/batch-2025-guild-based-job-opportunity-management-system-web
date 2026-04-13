@@ -26,6 +26,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const adminCheck = await requireAdmin(req);
+    if (adminCheck) return adminCheck;
+
     const { id } = await params
     if (!supabaseUrl || !serviceKey) return NextResponse.json({ error: 'Missing SUPABASE env vars' }, { status: 500 })
     const supabase = createSupabaseClient(supabaseUrl, serviceKey)
