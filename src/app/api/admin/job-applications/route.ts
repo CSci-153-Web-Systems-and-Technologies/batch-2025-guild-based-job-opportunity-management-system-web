@@ -86,7 +86,7 @@ export async function PATCH(req: Request) {
       }
 
       // Proceed to update the application. If updating the application fails,
-      // attempt to rollback the slot decrement (best-effort).
+      // attempt to rollback the slot decrement.
       const { data: updated, error: updateErr } = await supabase
         .from('job_applications')
         .update({ status })
@@ -95,12 +95,45 @@ export async function PATCH(req: Request) {
         .maybeSingle()
 
       if (updateErr || !updated) {
+        // Application update failed. Attempt to roll back the slot decrement.
+        let rollbackFailed = false
+        let rollbackErrorMsg = ''
+
         try {
-          await supabase.from('jobs').update({ slots: (updatedJob as any)?.slots + 1 }).eq('id', jobId)
-        } catch (rollbackErr) {
-          console.error('rollback failed', rollbackErr)
+          const { error: rollbackErr } = await supabase
+            .from('jobs')
+            .update({ slots: (updatedJob as any)?.slots + 1 })
+            .eq('id', jobId)
+
+          if (rollbackErr) {
+            rollbackFailed = true
+            rollbackErrorMsg = rollbackErr.message
+          }
+        } catch (rollbackException) {
+          rollbackFailed = true
+          rollbackErrorMsg = rollbackException instanceof Error ? rollbackException.message : String(rollbackException)
         }
-        return NextResponse.json({ error: 'Failed to update application' }, { status: 500 })
+
+        // Log rollback failure with full context for manual recovery
+        if (rollbackFailed) {
+          console.error('[admin/job-applications] CRITICAL: Slot count may be inconsistent', {
+            appId,
+            jobId,
+            applicationUpdateError: updateErr?.message || 'Update returned falsy result',
+            rollbackError: rollbackErrorMsg,
+          })
+        }
+
+        return NextResponse.json(
+          {
+            error: 'Failed to update application status',
+            message: rollbackFailed
+              ? 'Application update failed AND rollback failed. Job slot count may be inconsistent. Manual review required.'
+              : 'Application update failed but slots were restored.',
+            details: { appId, jobId },
+          },
+          { status: 500 }
+        )
       }
 
       // return the updated application
