@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { requireAdmin } from '@/lib/admin'
+import { createClient } from '@/lib/server'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -24,6 +25,20 @@ export async function POST(req: Request) {
     const adminCheck = await requireAdmin(req);
     if (adminCheck) return adminCheck;
 
+    // Get authenticated user's profile to capture created_by
+    const supabaseServer = await createClient()
+    const { data: userData } = await supabaseServer.auth.getUser()
+    const user = (userData as any)?.user
+    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
+    const { data: profileData } = await supabaseServer
+      .from('profiles')
+      .select('id')
+      .eq('auth_id', user.id)
+      .maybeSingle()
+    const profile = profileData as any
+    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+
     const body = await req.json()
     const { title, description, category, reward_xp, slots, pay, location } = body || {}
     if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 })
@@ -31,7 +46,7 @@ export async function POST(req: Request) {
     if (!supabaseUrl || !serviceKey) return NextResponse.json({ error: 'Missing SUPABASE env vars' }, { status: 500 })
     const supabase = createSupabaseClient(supabaseUrl, serviceKey)
     const { data, error } = await supabase.from('jobs').insert([
-      { title, description, category, reward_xp: reward_xp ?? 0, slots: slots ?? 0, pay: pay ?? 0, location: location ?? '' },
+      { title, description, category, reward_xp: reward_xp ?? 0, slots: slots ?? 0, pay: pay ?? 0, location: location ?? '', created_by: profile.id },
     ]).select('*')
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
