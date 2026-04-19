@@ -63,6 +63,7 @@ export async function PATCH(req: NextRequest, context: any) {
     }
 
     // If accepting, atomically claim a slot
+    let slotWasDecrementedJob: any = null
     if (status === 'accepted') {
       const slots = (jobData as any)?.slots ?? 0
       if (typeof slots !== 'number' || slots <= 0) {
@@ -87,6 +88,7 @@ export async function PATCH(req: NextRequest, context: any) {
         // Someone else modified slots concurrently or no slots left
         return NextResponse.json({ error: 'No slots available' }, { status: 409 })
       }
+      slotWasDecrementedJob = updatedJob
     }
 
     // Update application status
@@ -97,7 +99,36 @@ export async function PATCH(req: NextRequest, context: any) {
       .select('*')
       .maybeSingle()
 
-    if (updateErr) return NextResponse.json({ error: 'Failed to update application' }, { status: 500 })
+    if (updateErr) {
+      // Application update failed. If we had decremented slots, attempt rollback.
+      if (slotWasDecrementedJob) {
+        try {
+          const rollbackSlots = (slotWasDecrementedJob as any).slots + 1
+          const { error: rollbackErr } = await supabase
+            .from('jobs')
+            .update({ slots: rollbackSlots })
+            .eq('id', jobId)
+
+          if (rollbackErr) {
+            throw rollbackErr
+          }
+        } catch (rollbackError) {
+          // Rollback failed — log structured error for manual intervention
+          console.error('SLOT COUNT INCONSISTENCY — manual correction required', {
+            jobId,
+            appId,
+            originalError: updateErr.message,
+            rollbackError: rollbackError instanceof Error ? rollbackError.message : String(rollbackError),
+          })
+          return NextResponse.json(
+            { error: 'Application update failed. Slot count may be inconsistent. Please contact an administrator.' },
+            { status: 500 }
+          )
+        }
+      }
+      // Rollback succeeded or no rollback was needed
+      return NextResponse.json({ error: 'Application update failed. Please try again.' }, { status: 500 })
+    }
 
     // If completed, award xp to the applicant
     if (status === 'completed') {
