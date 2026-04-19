@@ -46,13 +46,12 @@ export async function GET(req: NextRequest) {
     }
 
     if (datePosted && datePosted !== 'Recent' && datePosted !== 'All Time') {
-      const now = new Date()
-      let since = new Date()
-      if (datePosted === 'Last Week') {
-        since.setDate(now.getDate() - 7)
-      } else if (datePosted === 'Last Month') {
-        since.setDate(now.getDate() - 30)
-      }
+      const now = new Date();
+      const since = new Date();
+      since.setTime(
+        now.getTime() - 
+        (datePosted === 'Last Week' ? 7 : 30) * 24 * 60 * 60 * 1000
+      );
       query = query.gte('created_at', since.toISOString())
     }
 
