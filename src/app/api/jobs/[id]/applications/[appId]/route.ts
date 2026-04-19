@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/server'
 import { getAuthenticatedUserWithProfile } from '@/lib/auth'
 import { isUserAdmin, checkResourceOwnership } from '@/lib/permissions'
+import * as logger from '@/lib/logger'
 
 const ALLOWED_STATUSES = ['pending', 'applied', 'accepted', 'rejected', 'completed'] as const
 type StatusType = (typeof ALLOWED_STATUSES)[number]
@@ -154,7 +155,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
           }
         } catch (rollbackError) {
           // Rollback failed — log structured error for manual intervention
-          console.error('SLOT COUNT INCONSISTENCY — manual correction required', {
+          logger.error('SLOT_ROLLBACK_FAILED', {
             jobId,
             appId,
             originalError: updateErr.message,
@@ -188,7 +189,13 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         const newXp = Math.max(0, currentXp + Number(reward))
         await supabase.from('user_stats').upsert({ user_id: applicantId, xp: newXp }, { onConflict: 'user_id' })
       } catch (awardErr) {
-        console.error('Failed to award XP', awardErr)
+        // XP award is non-critical; log for monitoring
+        logger.error('xp_award_failed', {
+          error: awardErr instanceof Error ? awardErr.message : String(awardErr),
+          applicantId,
+          jobId,
+          reward,
+        })
       }
     }
 

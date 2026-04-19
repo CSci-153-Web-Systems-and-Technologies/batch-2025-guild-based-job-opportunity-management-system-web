@@ -3,6 +3,7 @@ import { createClient as createServiceClient, type User } from '@supabase/supaba
 import { createClient } from '@/lib/server'
 import { createServerClient } from '@supabase/ssr'
 import { isUserAdmin } from '@/lib/permissions'
+import * as logger from '@/lib/logger'
 
 /**
  * Minimal interface for request objects that have cookies.
@@ -71,9 +72,8 @@ export async function requireAdmin(request: Request | NextRequest): Promise<Admi
 
     if (process.env.NODE_ENV !== 'production') {
       try {
-        console.debug('[requireAdmin] user.id=', user.id)
         const meta = user.user_metadata as Record<string, unknown> | undefined
-        console.debug('[requireAdmin] user.user_metadata.role=', meta?.role)
+        logger.debug('requireAdmin_check', { hasUser: !!user, hasRole: !!meta?.role })
       } catch {}
     }
 
@@ -107,8 +107,7 @@ export async function requireAdmin(request: Request | NextRequest): Promise<Admi
     const isAdmin = await isUserAdmin(svc, adminProfile.role_id)
     if (process.env.NODE_ENV !== 'production') {
       try {
-        console.debug('[requireAdmin] profile.role_id=', adminProfile.role_id)
-        console.debug('[requireAdmin] resolved isAdmin=', isAdmin)
+        logger.debug('requireAdmin_check_complete', { isAdmin, hasRoleId: !!adminProfile.role_id })
       } catch {}
     }
 

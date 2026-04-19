@@ -37,14 +37,10 @@ export default function JobDetailsModal({ isOpen, onClose, jobId, job }: JobDeta
   const [showToast, setShowToast] = useState(false)
   const [myApplication, setMyApplication] = useState<null | { id: string; status: string }>(null)
 
-  // debug: log job payload when modal opens to ensure id is present
+  // Track modal open state
   React.useEffect(() => {
     if (isOpen) {
-      try {
-        console.debug('JobDetailsModal opened with job', job)
-      } catch (e) {
-        // no-op
-      }
+      // JobDetailsModal opened
     }
   }, [isOpen, job])
 
@@ -117,8 +113,7 @@ export default function JobDetailsModal({ isOpen, onClose, jobId, job }: JobDeta
           const resolvedRaw = jobId ?? (job && (job.id ?? job.job_id ?? job._id))
           const resolved = typeof resolvedRaw === 'string' || typeof resolvedRaw === 'number' ? String(resolvedRaw).trim() : ''
           if (!resolved) {
-            // client-side diagnostic for missing id
-            console.log('Missing jobId when attempting to apply', { jobId, job })
+            // Missing ID handled gracefully — button should be disabled in parent component
             setErrorMessage('Invalid or missing job identifier')
             setApplicationStatus('error')
             return

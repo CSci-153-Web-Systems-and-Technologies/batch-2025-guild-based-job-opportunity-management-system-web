@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/client'
+import * as logger from '@/lib/logger'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -56,7 +57,7 @@ export function LoginForm({ className, ...props }: HTMLMotionProps<'div'>) {
           })
         } catch (err) {
           // Non-fatal: if cookie sync fails the client will still have a local session
-          console.error('Failed to sync session to server', err)
+          logger.warn('session_sync_failed', { message: err instanceof Error ? err.message : String(err) })
         }
       }
 
@@ -87,8 +88,8 @@ export function LoginForm({ className, ...props }: HTMLMotionProps<'div'>) {
           })
         }
       } catch (err) {
-        // Non-fatal: log for debugging
-        console.warn('profile upsert (post-login) failed:', err)
+        // Non-fatal: profile upsert failure doesn't block login
+        logger.warn('profile_upsert_failed', { message: err instanceof Error ? err.message : String(err) })
       }
       // After login, prefer a direct role-based redirect to avoid extra round-trips.
       let destination = '/dashboard'
@@ -109,8 +110,9 @@ export function LoginForm({ className, ...props }: HTMLMotionProps<'div'>) {
             const roleData = await roleRes.json()
             if (roleData?.role === 'admin') destination = '/admin'
           }
-        } catch {
-          // ignore and default to /dashboard
+        } catch (err) {
+          // Role fetch failed, use default
+          logger.warn('role_fetch_failed', { fallback: '/dashboard' })
         }
       }
 
