@@ -62,7 +62,7 @@ export async function requireAdmin(request: Request | NextRequest) {
     const { data: profile } = await svc
       .from('profiles')
       .select('role_id')
-      .or(`auth_id.eq.${user.id},user_id.eq.${user.id}`)
+      .eq('auth_id', user.id)
       .maybeSingle()
 
     if (!profile || !(profile as any).role_id) {

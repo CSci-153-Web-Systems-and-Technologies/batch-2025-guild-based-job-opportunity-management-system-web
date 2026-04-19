@@ -113,7 +113,7 @@ export async function updateSession(request: NextRequest) {
           const { data: profile } = await svc
             .from('profiles')
             .select('role_id')
-            .or(`auth_id.eq.${(user as any)?.id},user_id.eq.${(user as any)?.id}`)
+            .eq('auth_id', (user as any)?.id)
             .maybeSingle()
 
           let profileRoleName: string | undefined = undefined
@@ -204,7 +204,7 @@ export async function redirectAdminFromUserDashboard(request: NextRequest) {
     const { data: profile } = await svc
       .from('profiles')
       .select('role_id')
-      .or(`auth_id.eq.${user.id},user_id.eq.${user.id}`)
+      .eq('auth_id', user.id)
       .maybeSingle()
 
     if (profile && (profile as any).role_id) {
