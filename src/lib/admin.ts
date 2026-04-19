@@ -1,10 +1,35 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createClient as createServiceClient, type User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/server'
 import { createServerClient } from '@supabase/ssr'
 import { isUserAdmin } from '@/lib/permissions'
 
-export async function requireAdmin(request: Request | NextRequest) {
+/**
+ * Minimal interface for request objects that have cookies.
+ */
+interface RequestLike {
+  cookies?: {
+    getAll?: () => Array<{ name: string; value: string }>
+  }
+}
+
+/**
+ * Minimal interface for profile rows from the profiles table.
+ */
+interface AdminProfile {
+  role_id: number | null
+}
+
+/**
+ * Return type for admin checks - discriminated union for clean handling.
+ */
+type AdminCheckResult = NextResponse | null
+
+/**
+ * Check if a request is authenticated and belongs to an admin user.
+ * Returns null if admin check passes, or a NextResponse error if it fails.
+ */
+export async function requireAdmin(request: Request | NextRequest): Promise<AdminCheckResult> {
   try {
     // Try to create a Supabase server client bound to the incoming request's
     // cookies so we can read the user's session in API and middleware contexts.
@@ -12,11 +37,17 @@ export async function requireAdmin(request: Request | NextRequest) {
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY
-      if (supabaseUrl && anonKey && (request as any)?.cookies && typeof (request as any).cookies.getAll === 'function') {
+      const requestLike = request as RequestLike
+      if (
+        supabaseUrl &&
+        anonKey &&
+        requestLike?.cookies &&
+        typeof requestLike.cookies.getAll === 'function'
+      ) {
         supabase = createServerClient(supabaseUrl, anonKey, {
           cookies: {
             getAll() {
-              return (request as any).cookies.getAll()
+              return requestLike.cookies!.getAll!()
             },
             setAll() {
               // noop in this context
@@ -33,22 +64,24 @@ export async function requireAdmin(request: Request | NextRequest) {
     }
 
     const { data: userData } = await supabase.auth.getUser()
-    const user = (userData as any)?.user
+    const user = userData?.user
     if (!user) {
       return NextResponse.json({ error: 'unauthenticated' }, { status: 401 })
     }
 
     if (process.env.NODE_ENV !== 'production') {
       try {
-        console.debug('[requireAdmin] user.id=', (user as any)?.id)
-        console.debug('[requireAdmin] user.user_metadata.role=', (user as any)?.user_metadata?.role)
+        console.debug('[requireAdmin] user.id=', user.id)
+        const meta = user.user_metadata as Record<string, unknown> | undefined
+        console.debug('[requireAdmin] user.user_metadata.role=', meta?.role)
       } catch {}
     }
 
     // Quick path: if the user's auth metadata already marks them as admin,
     // accept immediately. This mirrors the behavior in middleware and avoids
     // requiring a profiles table lookup for newly-promoted admins.
-    const metaRole = (user as any)?.user_metadata?.role
+    const meta = user.user_metadata as Record<string, unknown> | undefined
+    const metaRole = meta?.role
     if (metaRole && typeof metaRole === 'string' && metaRole === 'admin') {
       return null
     }
@@ -66,14 +99,15 @@ export async function requireAdmin(request: Request | NextRequest) {
       .eq('auth_id', user.id)
       .maybeSingle()
 
-    if (!profile || !(profile as any).role_id) {
+    const adminProfile = profile as AdminProfile | null
+    if (!adminProfile || !adminProfile.role_id) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 })
     }
 
-    const isAdmin = await isUserAdmin(svc, (profile as any).role_id)
+    const isAdmin = await isUserAdmin(svc, adminProfile.role_id)
     if (process.env.NODE_ENV !== 'production') {
       try {
-        console.debug('[requireAdmin] profile.role_id=', (profile as { role_id?: number } | null)?.role_id)
+        console.debug('[requireAdmin] profile.role_id=', adminProfile.role_id)
         console.debug('[requireAdmin] resolved isAdmin=', isAdmin)
       } catch {}
     }

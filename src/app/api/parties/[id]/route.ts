@@ -5,7 +5,49 @@ import * as logger from '@/lib/logger'
 import { getAuthenticatedUserWithProfile } from '@/lib/auth'
 import { isUserAdmin, checkResourceOwnership } from '@/lib/permissions'
 
-export async function GET(req: NextRequest, context: any) {
+/**
+ * Route parameter context type.
+ */
+interface RouteContext {
+  params: Promise<Record<string, string>> | Record<string, string>
+}
+
+/**
+ * Party row with leader info.
+ */
+interface PartyWithLeader {
+  id: string
+  leader_id: string
+  name?: string
+  description?: string | null
+  min_rank_id?: number | null
+  category?: string | null
+  created_at?: string
+}
+
+/**
+ * Party update payload.
+ */
+interface PartyUpdate {
+  name?: string
+  description?: string | null
+  min_rank_id?: number | null
+  category?: string | null
+}
+
+/**
+ * Party member with profile info.
+ */
+interface PartyMemberWithProfile {
+  id: string
+  party_id: string
+  user_id: string
+  role: string
+  joined_at: string
+  profiles?: { display_name: string; avatar_url: string | null }
+}
+
+export async function GET(req: NextRequest, context: RouteContext) {
   try {
     const supabase = await createClient()
     const rawParams = context?.params
@@ -16,7 +58,11 @@ export async function GET(req: NextRequest, context: any) {
     }
 
     // include leader profile info and min rank when fetching a single party
-    const { data: party, error } = await supabase.from('parties').select('id, name, description, leader_id, min_rank_id, category, created_at, profiles(display_name, avatar_url), ranks(name, min_xp)').eq('id', partyId).maybeSingle()
+    const { data: party, error } = await supabase
+      .from('parties')
+      .select('id, name, description, leader_id, min_rank_id, category, created_at, profiles(display_name, avatar_url), ranks(name, min_xp)')
+      .eq('id', partyId)
+      .maybeSingle()
     if (error) {
       logger.error('[api/parties/[id]] supabase error', error)
       return errorResponse(error.message ?? 'Failed to fetch party', 500, undefined, { error })
@@ -35,7 +81,7 @@ export async function GET(req: NextRequest, context: any) {
       return errorResponse(membersErr.message ?? 'Failed to fetch members', 500, undefined, { membersErr })
     }
 
-    return successResponse({ party, members: members ?? [] })
+    return successResponse({ party, members: (members ?? []) as PartyMemberWithProfile[] })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     logger.error('[api/parties/[id]] unexpected', err)
@@ -43,32 +89,39 @@ export async function GET(req: NextRequest, context: any) {
   }
 }
 
-export async function PATCH(req: NextRequest, context: any) {
+export async function PATCH(req: NextRequest, context: RouteContext) {
   try {
     const supabase = await createClient()
 
     const authResult = await getAuthenticatedUserWithProfile(supabase)
     if (authResult.error) return errorResponse(authResult.error, 401)
-    const { user, profile } = authResult
+    // After error check, profile is guaranteed non-null
+    const profile = authResult.profile!
 
     const rawParams = context?.params
     const params = rawParams instanceof Promise ? await rawParams : rawParams
     const partyId = params?.id
-    const { data: partyData, error: partyErr } = await supabase.from('parties').select('id, leader_id').eq('id', partyId).maybeSingle()
+    const { data: partyData, error: partyErr } = await supabase
+      .from('parties')
+      .select('id, leader_id')
+      .eq('id', partyId)
+      .maybeSingle()
     if (partyErr) {
       logger.error('[api/parties/[id] PATCH] partyErr', partyErr)
       return errorResponse('Failed to fetch party', 500, undefined, { partyErr })
     }
     if (!partyData) return errorResponse('Party not found', 404)
 
+    const party = partyData as PartyWithLeader
+
     // permission: leader or admin
     const isAdmin = await isUserAdmin(supabase, profile.role_id)
-    if (!checkResourceOwnership(partyData, profile.id, isAdmin, 'party')) {
+    if (!checkResourceOwnership(party, profile.id, isAdmin, 'party')) {
       return errorResponse('Forbidden', 403)
     }
 
     const body = await req.json()
-    const updates: any = {}
+    const updates: PartyUpdate = {}
     if (body?.name) updates.name = body.name
     if (Object.prototype.hasOwnProperty.call(body, 'description')) updates.description = body.description
 
@@ -114,27 +167,34 @@ export async function PATCH(req: NextRequest, context: any) {
   }
 }
 
-export async function DELETE(_req: NextRequest, context: any) {
+export async function DELETE(_req: NextRequest, context: RouteContext) {
   try {
     const supabase = await createClient()
 
     const authResult = await getAuthenticatedUserWithProfile(supabase)
     if (authResult.error) return errorResponse(authResult.error, 401)
-    const { user, profile } = authResult
+    // After error check, profile is guaranteed non-null
+    const profile = authResult.profile!
 
     const rawParams = context?.params
     const params = rawParams instanceof Promise ? await rawParams : rawParams
     const partyId = params?.id
-    const { data: partyData, error: partyErr } = await supabase.from('parties').select('id, leader_id').eq('id', partyId).maybeSingle()
+    const { data: partyData, error: partyErr } = await supabase
+      .from('parties')
+      .select('id, leader_id')
+      .eq('id', partyId)
+      .maybeSingle()
     if (partyErr) {
       logger.error('[api/parties/[id] DELETE] partyErr', partyErr)
       return errorResponse('Failed to fetch party', 500, undefined, { partyErr })
     }
     if (!partyData) return errorResponse('Party not found', 404)
 
+    const party = partyData as PartyWithLeader
+
     // permission: leader or admin
     const isAdmin = await isUserAdmin(supabase, profile.role_id)
-    if (!checkResourceOwnership(partyData, profile.id, isAdmin, 'party')) {
+    if (!checkResourceOwnership(party, profile.id, isAdmin, 'party')) {
       return errorResponse('Forbidden', 403)
     }
 

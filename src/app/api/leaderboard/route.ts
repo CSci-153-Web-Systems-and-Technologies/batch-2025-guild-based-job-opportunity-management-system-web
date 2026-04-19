@@ -2,6 +2,43 @@ import { createClient } from '@/lib/server'
 import { errorResponse, successResponse } from '@/lib/api-response'
 import * as logger from '@/lib/logger'
 
+/**
+ * User stats row with profile and rank info.
+ */
+interface UserStatsRow {
+  xp: number
+  user_id: string
+  profiles: {
+    id: string
+    first_name: string | null
+    display_name: string | null
+    avatar_url: string | null
+    email: string | null
+  } | null
+  current_rank_id: number | null
+  ranks: { name: string } | null
+}
+
+/**
+ * Party member record with party name.
+ */
+interface PartyMemberRow {
+  user_id: string
+  parties: { name: string } | null
+}
+
+/**
+ * Leaderboard entry in the response.
+ */
+interface LeaderboardRow {
+  rank: number
+  xp: number
+  user_id: string
+  profile: UserStatsRow['profiles']
+  rank_name: string | null
+  party_name: string | null
+}
+
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
@@ -22,7 +59,7 @@ export async function GET(request: Request) {
       return errorResponse(error.message ?? 'Failed to fetch leaderboard', 500, undefined, { error })
     }
 
-    const rows = (data ?? []) as any[]
+    const rows = (data ?? []) as UserStatsRow[]
 
     // Fetch party membership for these user ids to attach party names
     const userIds = rows.map((r) => r.user_id).filter(Boolean)
@@ -36,14 +73,14 @@ export async function GET(request: Request) {
       if (pmError) {
         logger.error('[api/leaderboard] party_members fetch error:', pmError)
       } else if (pmData) {
-        pmData.forEach((pm: any) => {
+        pmData.forEach((pm: PartyMemberRow) => {
           partiesMap[pm.user_id] = pm.parties?.name ?? null
         })
       }
     }
 
     // Build normalized list
-    const list = rows.map((row: any, idx: number) => ({
+    const list: LeaderboardRow[] = rows.map((row, idx) => ({
       rank: offset + idx + 1,
       xp: row.xp || 0,
       user_id: row.user_id,
