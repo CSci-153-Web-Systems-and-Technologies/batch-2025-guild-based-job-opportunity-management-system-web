@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/server'
+import { isUserAdmin, checkResourceOwnership } from '@/lib/permissions'
 
 export async function GET(req: NextRequest, context: any) {
   try {
@@ -34,13 +35,8 @@ export async function GET(req: NextRequest, context: any) {
     if (!jobData) return NextResponse.json({ error: 'Job not found' }, { status: 404 })
 
     // allow if requester is job owner or has role 'admin'
-    let isAdmin = false
-    if (profile.role_id) {
-      const { data: roleData } = await supabase.from('roles').select('name').eq('id', profile.role_id).maybeSingle()
-      if (roleData && (roleData as any).name === 'admin') isAdmin = true
-    }
-
-    if ((jobData as any).created_by !== profile.id && !isAdmin) {
+    const isAdmin = await isUserAdmin(supabase, profile.role_id)
+    if (!checkResourceOwnership(jobData, profile.id, isAdmin, 'job')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

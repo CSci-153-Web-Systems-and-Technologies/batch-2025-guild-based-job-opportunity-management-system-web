@@ -62,7 +62,8 @@ export async function POST(req: NextRequest) {
 
     const authResult = await getAuthenticatedUserWithProfile(supabase)
     if (authResult.error) return errorResponse(authResult.error, 401)
-    const { profile } = authResult
+    // After error check, profile is guaranteed non-null
+    const profile = authResult.profile!
 
     const body = await req.json()
     const name = body?.name

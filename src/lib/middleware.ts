@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isUserAdmin } from '@/lib/permissions'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -208,8 +209,8 @@ export async function redirectAdminFromUserDashboard(request: NextRequest) {
       .maybeSingle()
 
     if (profile && (profile as any).role_id) {
-      const { data: roleData } = await svc.from('roles').select('name').eq('id', (profile as any).role_id).maybeSingle()
-      if ((roleData as any)?.name === 'admin') {
+      const isAdmin = await isUserAdmin(svc, (profile as any).role_id)
+      if (isAdmin) {
         const urlClone = request.nextUrl.clone()
         urlClone.pathname = '/admin'
         return NextResponse.redirect(urlClone)

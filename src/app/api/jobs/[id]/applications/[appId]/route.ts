@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/server'
 import { getAuthenticatedUserWithProfile } from '@/lib/auth'
+import { isUserAdmin, checkResourceOwnership } from '@/lib/permissions'
 
 const ALLOWED_STATUSES = ['pending', 'applied', 'accepted', 'rejected', 'completed'] as const
 
@@ -9,7 +10,9 @@ export async function PATCH(req: NextRequest, context: any) {
     const supabase = await createClient()
     const authResult = await getAuthenticatedUserWithProfile(supabase)
     if (authResult.error) return NextResponse.json({ error: authResult.error }, { status: 401 })
-    const { user, profile } = authResult
+    // After error check, user and profile are guaranteed non-null
+    const user = authResult.user!
+    const profile = authResult.profile!
 
     const effectiveProfileId = profile.id
     if (!effectiveProfileId) return NextResponse.json({ error: 'Profile has no id' }, { status: 500 })
@@ -37,13 +40,8 @@ export async function PATCH(req: NextRequest, context: any) {
     if (!jobData) return NextResponse.json({ error: 'Job not found' }, { status: 404 })
 
     // check permission: must be job owner or admin
-    let isAdmin = false
-    if (profile.role_id) {
-      const { data: roleData } = await supabase.from('roles').select('name').eq('id', profile.role_id).maybeSingle()
-      if (roleData && (roleData as any).name === 'admin') isAdmin = true
-    }
-
-    if ((jobData as any).created_by !== user.id && !isAdmin) {
+    const isAdmin = await isUserAdmin(supabase, profile.role_id)
+    if (!checkResourceOwnership(jobData, user.id, isAdmin, 'job')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

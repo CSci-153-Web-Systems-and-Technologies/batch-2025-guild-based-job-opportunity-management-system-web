@@ -30,7 +30,8 @@ export async function POST(req: Request) {
     const supabaseServer = await createClient()
     const authResult = await getAuthenticatedUserWithProfile(supabaseServer)
     if (authResult.error) return NextResponse.json({ error: authResult.error }, { status: 401 })
-    const { user, profile } = authResult
+    // After error check, user and profile are guaranteed non-null
+    const profile = authResult.profile!
 
     const body = await req.json()
     const { title, description, category, reward_xp, slots, pay, location } = body || {}

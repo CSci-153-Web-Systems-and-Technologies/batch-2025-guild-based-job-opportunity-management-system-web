@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/server'
 import { createServerClient } from '@supabase/ssr'
+import { isUserAdmin } from '@/lib/permissions'
 
 export async function requireAdmin(request: Request | NextRequest) {
   try {
@@ -69,16 +70,15 @@ export async function requireAdmin(request: Request | NextRequest) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 })
     }
 
-    const { data: roleData } = await svc.from('roles').select('name').eq('id', (profile as any).role_id).maybeSingle()
-    const roleName = (roleData as any)?.name
+    const isAdmin = await isUserAdmin(svc, (profile as any).role_id)
     if (process.env.NODE_ENV !== 'production') {
       try {
         console.debug('[requireAdmin] profile.role_id=', (profile as { role_id?: number } | null)?.role_id)
-        console.debug('[requireAdmin] resolved role name=', roleName)
+        console.debug('[requireAdmin] resolved isAdmin=', isAdmin)
       } catch {}
     }
 
-    if (roleName !== 'admin') {
+    if (!isAdmin) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 })
     }
 

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/server'
 import { errorResponse, successResponse } from '@/lib/api-response'
 import * as logger from '@/lib/logger'
 import { getAuthenticatedUserWithProfile } from '@/lib/auth'
+import { isUserAdmin, checkResourceOwnership } from '@/lib/permissions'
 
 export async function GET(req: NextRequest, context: any) {
   try {
@@ -61,13 +62,8 @@ export async function PATCH(req: NextRequest, context: any) {
     if (!partyData) return errorResponse('Party not found', 404)
 
     // permission: leader or admin
-    let isAdmin = false
-    if (profile.role_id) {
-      const { data: roleData } = await supabase.from('roles').select('name').eq('id', profile.role_id).maybeSingle()
-      if (roleData && (roleData as any).name === 'admin') isAdmin = true
-    }
-
-    if ((partyData as any).leader_id !== profile.id && !isAdmin) {
+    const isAdmin = await isUserAdmin(supabase, profile.role_id)
+    if (!checkResourceOwnership(partyData, profile.id, isAdmin, 'party')) {
       return errorResponse('Forbidden', 403)
     }
 
@@ -137,13 +133,8 @@ export async function DELETE(_req: NextRequest, context: any) {
     if (!partyData) return errorResponse('Party not found', 404)
 
     // permission: leader or admin
-    let isAdmin = false
-    if (profile.role_id) {
-      const { data: roleData } = await supabase.from('roles').select('name').eq('id', profile.role_id).maybeSingle()
-      if (roleData && (roleData as any).name === 'admin') isAdmin = true
-    }
-
-    if ((partyData as any).leader_id !== profile.id && !isAdmin) {
+    const isAdmin = await isUserAdmin(supabase, profile.role_id)
+    if (!checkResourceOwnership(partyData, profile.id, isAdmin, 'party')) {
       return errorResponse('Forbidden', 403)
     }
 

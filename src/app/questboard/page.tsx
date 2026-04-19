@@ -7,6 +7,7 @@ import QuestBoardIcon from '@/assets/icons/quest-board.png'
 import { createClient as createServerClient } from '@/lib/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getAuthenticatedUserWithProfile } from '@/lib/auth'
+import { isUserAdmin } from '@/lib/permissions'
 
 export default async function QuestBoardPage() {
   // Check if the user is an admin to show the Manage Quests button
@@ -23,19 +24,7 @@ export default async function QuestBoardPage() {
         isAdmin = true
       } else {
         // Fallback to service role check
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-        const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-        if (serviceKey && url) {
-          try {
-            const svc = createSupabaseClient(url, serviceKey)
-            const { data: roleData } = await svc.from('roles').select('name').eq('id', authResult.profile.role_id).maybeSingle()
-            if ((roleData as any)?.name === 'admin') {
-              isAdmin = true
-            }
-          } catch {
-            // ignore
-          }
-        }
+        isAdmin = await isUserAdmin(supabase, authResult.profile.role_id)
       }
     }
   } catch {
