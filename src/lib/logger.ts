@@ -31,4 +31,14 @@ export function error(message: string, meta?: Record<string, any> | Error | unkn
   } catch {}
 }
 
-export default { debug, info, error }
+export function warn(message: string, meta?: Record<string, any> | Error | unknown) {
+  try {
+    if (meta) {
+      console.warn('[warn]', message, safeStringify(meta))
+    } else {
+      console.warn('[warn]', message)
+    }
+  } catch {}
+}
+
+export default { debug, info, error, warn }
