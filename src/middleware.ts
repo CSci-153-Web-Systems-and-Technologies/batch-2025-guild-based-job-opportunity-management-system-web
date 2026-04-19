@@ -1,16 +1,9 @@
-import { updateSession, redirectAdminFromUserDashboard } from '@/lib/middleware'
+import { updateSession } from '@/lib/middleware'
 import { type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // First run the session update which handles auth and admin route protection.
-  const res = await updateSession(request)
-
-  // If the request is for the user dashboard, ensure admins are redirected
-  // to the admin dashboard immediately after session handling.
-  const maybeRedirect = await redirectAdminFromUserDashboard(request)
-  if (maybeRedirect) return maybeRedirect
-
-  return res
+  // The main middleware that handles session management, auth protection, and admin redirects
+  return await updateSession(request)
 }
 
 export const config = {
