@@ -9,7 +9,8 @@ export async function GET() {
 
     const authResult = await getAuthenticatedUserWithProfile(supabase)
     if (authResult.error) return errorResponse(authResult.error, 401)
-    const { profile } = authResult
+    // After error check, profile is guaranteed non-null
+    const profile = authResult.profile!
 
     // Fetch full profile with additional columns
     const { data: profileData, error: profileError } = await supabase
@@ -23,8 +24,8 @@ export async function GET() {
       return errorResponse('Failed to fetch full profile', 500, undefined, { profileError })
     }
 
-    const profile = profileData as any | null
-    if (!profile) return errorResponse('Profile not found', 404)
+    const fullProfile = profileData as any | null
+    if (!fullProfile) return errorResponse('Profile not found', 404)
 
     // Parties total
     const { count: partiesCount } = await supabase.from('parties').select('id', { count: 'exact' })
@@ -120,9 +121,9 @@ export async function GET() {
 
     const response = {
       profile: {
-        id: profile.id,
-        display_name: profile.display_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
-        avatar_url: profile.avatar_url || null,
+        id: fullProfile.id,
+        display_name: fullProfile.display_name || `${fullProfile.first_name || ''} ${fullProfile.last_name || ''}`.trim(),
+        avatar_url: fullProfile.avatar_url || null,
       },
       rank: rank ? { id: rank.id, name: rank.name } : null,
       xp: statsData?.xp ?? 0,
