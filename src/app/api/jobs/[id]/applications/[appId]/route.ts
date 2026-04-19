@@ -52,7 +52,7 @@ export async function PATCH(req: NextRequest, context: any) {
       if (roleData && (roleData as any).name === 'admin') isAdmin = true
     }
 
-    if ((jobData as any).created_by !== effectiveProfileId && !isAdmin) {
+    if ((jobData as any).created_by !== user.id && !isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
