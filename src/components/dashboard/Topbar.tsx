@@ -7,6 +7,7 @@ import NotificationIcon from '@/assets/icons/notification.png'
 import MobileSidebar from './MobileSidebar'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/client'
+import { useAuthenticatedUser } from '@/hooks/useAuthenticatedUser'
 
 type SearchItem = { id: string; title: string; type: 'job' | 'party'; subtitle?: string }
 
@@ -34,59 +35,41 @@ export function Topbar() {
   const [formLastName, setFormLastName] = React.useState('')
   const [savingProfile, setSavingProfile] = React.useState(false)
   const debounceRef = React.useRef<number | null>(null)
+  const { user, profile } = useAuthenticatedUser()
 
   React.useEffect(() => {
     let mounted = true
     ;(async () => {
       try {
-        try {
-          const url = new URL(window.location.href)
-          const q = url.searchParams.get('q') || ''
-          setQuery(q)
-        } catch {}
+        // Get initial query param from URL
+        const url = new URL(window.location.href)
+        const q = url.searchParams.get('q') || ''
+        if (mounted) setQuery(q)
+      } catch {}
 
-        const supabase = createClient()
-        const { data: userData } = await supabase.auth.getUser()
-        const user = (userData as unknown as { user?: { id: string; email?: string; user_metadata?: unknown } })?.user
-        if (!user) return
+      // Update display name and avatar from hook data
+      if (mounted && profile) {
+        setDisplayName(profile.first_name || null)
+        setAvatarUrl(profile.avatar_url || null)
+      }
 
-        try {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('first_name, avatar_url')
-            .eq('auth_id', user.id)
-            .maybeSingle()
-
+      // Fetch experience and rank info from summary endpoint
+      try {
+        const summaryRes = await fetch('/api/dashboard/summary')
+        if (summaryRes.ok) {
+          const summaryData = await summaryRes.json()
           if (!mounted) return
-          if (profileData) {
-            const fname = profileData.first_name || null
-            setDisplayName(fname)
-            setAvatarUrl(profileData.avatar_url || null)
+          setExperience(summaryData.data?.xp ?? 0)
+          if (summaryData.data?.rank) {
+            setRankInfo(summaryData.data.rank)
           }
-
-          // Fetch experience and rank info from summary endpoint
-          try {
-            const summaryRes = await fetch('/api/dashboard/summary')
-            if (summaryRes.ok) {
-              const summaryData = await summaryRes.json()
-              if (!mounted) return
-              setExperience(summaryData.data?.xp ?? 0)
-              if (summaryData.data?.rank) {
-                setRankInfo(summaryData.data.rank)
-              }
-            }
-          } catch {
-            // ignore summary fetch errors
-          }
-        } catch (err) {
-          console.warn('[Topbar] profile fetch failed', err)
         }
       } catch {
-        // ignore
+        // ignore summary fetch errors
       }
     })()
     return () => { mounted = false }
-  }, [])
+  }, [profile])
 
   const onChange = (value: string) => {
     setQuery(value)

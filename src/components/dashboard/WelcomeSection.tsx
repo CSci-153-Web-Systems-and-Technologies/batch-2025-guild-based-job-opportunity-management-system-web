@@ -4,6 +4,7 @@ import * as React from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/client'
 import { ensureProfile } from '@/lib/profile'
+import { useAuthenticatedUser } from '@/hooks/useAuthenticatedUser'
 import UserStatsSection from './UserStatsSection'
 import LevelProgressBar from './LevelProgressBar'
 import { SummaryCard } from './SummaryCard'
@@ -12,97 +13,82 @@ import partyIcon from '@/assets/icons/party.png'
 import targetIcon from '@/assets/icons/target.png'
 
 export function WelcomeSection() {
-  const [firstName, setFirstName] = React.useState<string | null>(null)
-  const [lastName, setLastName] = React.useState<string | null>(null)
-  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null)
+  const { user, profile } = useAuthenticatedUser()
   const [rank, setRank] = React.useState<string>('Beginner Adventurer')
   const [experience, setExperience] = React.useState<number>(0)
   const [finishedJobs, setFinishedJobs] = React.useState<number | null>(null)
   const [availableParties, setAvailableParties] = React.useState<number | null>(null)
   const [openQuests, setOpenQuests] = React.useState<number | null>(null)
   const [isLoadingSummary, setIsLoadingSummary] = React.useState(true)
+
   React.useEffect(() => {
+    if (!user) {
+      setIsLoadingSummary(false)
+      return
+    }
+
     let mounted = true
     ;(async () => {
       try {
-        const supabase = createClient()
-        const { data: userData } = await supabase.auth.getUser()
-        const user = (userData as unknown as { user?: { id: string; email?: string; user_metadata?: unknown } })?.user
-        if (!user) return
-
-        try {
-          const res = await fetch('/api/dashboard/summary')
-          if (res.ok) {
-            try {
-              const text = await res.text()
-              if (!text) {
-                throw new Error('Empty response body')
-              }
-              const json = JSON.parse(text)
-              if (!mounted) return
-              const p = json.profile || {}
-              const display = p.display_name || `${p.first_name || ''} ${p.last_name || ''}`.trim()
-              setFirstName(display ? display.split(' ')[0] : null)
-              setLastName(display ? display.split(' ').slice(1).join(' ') : null)
-              setAvatarUrl(p.avatar_url || null)
-
-              if (json.rank && json.rank.name) setRank(json.rank.name)
-              if (typeof json.xp === 'number') setExperience(json.xp)
-
-              setFinishedJobs(typeof json.finishedJobsCount === 'number' ? json.finishedJobsCount : json.finished_jobs_count ?? null)
-              setAvailableParties(typeof json.partiesCount === 'number' ? json.partiesCount : json.parties_count ?? null)
-              setOpenQuests(typeof json.openQuestsCount === 'number' ? json.openQuestsCount : json.open_quests_count ?? null)
-              setIsLoadingSummary(false)
-            } catch (parseErr) {
-              console.error('[WelcomeSection] Failed to parse summary response:', parseErr)
-              setIsLoadingSummary(false)
+        const res = await fetch('/api/dashboard/summary')
+        if (res.ok) {
+          try {
+            const text = await res.text()
+            if (!text) {
+              throw new Error('Empty response body')
             }
-          } else {
-            setIsLoadingSummary(false)
-            // fallback: original profile logic if the summary endpoint fails
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('auth_id', user.id)
-              .single()
-
+            const json = JSON.parse(text)
             if (!mounted) return
+            if (json.rank && json.rank.name) setRank(json.rank.name)
+            if (typeof json.xp === 'number') setExperience(json.xp)
 
-            if (profileError) {
-              const profile = await ensureProfile()
-              if (!mounted) return
-              if (profile) {
-                setFirstName(profile.first_name || null)
-                setLastName(profile.last_name || null)
-                setAvatarUrl(profile.avatar_url || null)
-              }
-            } else if (profileData) {
-              setFirstName(profileData.first_name || null)
-              setLastName(profileData.last_name || null)
-              setAvatarUrl(profileData.avatar_url || null)
-              setRank(profileData.rank || 'Beginner Adventurer')
-              setExperience(profileData.experience || 0)
-            }
+            setFinishedJobs(typeof json.finishedJobsCount === 'number' ? json.finishedJobsCount : json.finished_jobs_count ?? null)
+            setAvailableParties(typeof json.partiesCount === 'number' ? json.partiesCount : json.parties_count ?? null)
+            setOpenQuests(typeof json.openQuestsCount === 'number' ? json.openQuestsCount : json.open_quests_count ?? null)
+            setIsLoadingSummary(false)
+          } catch (parseErr) {
+            console.error('[WelcomeSection] Failed to parse summary response:', parseErr)
+            setIsLoadingSummary(false)
           }
-        } catch (err) {
-          // fallback to ensureProfile
+        } else {
           setIsLoadingSummary(false)
-          const profile = await ensureProfile()
+          // fallback: original profile logic if the summary endpoint fails
+          const supabase = createClient()
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('auth_id', user.id)
+            .single()
+
           if (!mounted) return
-          if (profile) {
-            setFirstName(profile.first_name || null)
-            setLastName(profile.last_name || null)
-            setAvatarUrl(profile.avatar_url || null)
+
+          if (profileError) {
+            const fallbackProfile = await ensureProfile()
+            if (!mounted) return
+            if (fallbackProfile) {
+              setRank(fallbackProfile.rank || 'Beginner Adventurer')
+              setExperience(fallbackProfile.experience || 0)
+            }
+          } else if (profileData) {
+            setRank(profileData.rank || 'Beginner Adventurer')
+            setExperience(profileData.experience || 0)
           }
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        // fallback to ensureProfile
+        setIsLoadingSummary(false)
+        const fallbackProfile = await ensureProfile()
+        if (!mounted) return
+        if (fallbackProfile) {
+          // Update state from fallback profile if needed
+        }
       }
     })()
     return () => { mounted = false }
-  }, [])
+  }, [user])
 
-  const displayName = [firstName, lastName].filter(Boolean).join(' ') || 'User'
+  const displayName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || 'User'
+  const avatarUrl = profile?.avatar_url || null
 
   return (
     <div className="flex flex-col items-center gap-1 md:gap-4 py-4 md:py-8 w-full">

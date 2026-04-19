@@ -1,24 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/server'
+import { getAuthenticatedUserWithProfile } from '@/lib/auth'
 
 const ALLOWED_STATUSES = ['pending', 'applied', 'accepted', 'rejected', 'completed'] as const
 
 export async function PATCH(req: NextRequest, context: any) {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
-    const user = (userData as any)?.user
-    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-
-    const { data: profileData, error: profileErr } = await supabase
-      .from('profiles')
-      .select('id, role_id')
-      .eq('auth_id', user.id)
-      .maybeSingle()
-
-    if (profileErr) return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
-    const profile = profileData as any
-    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    const authResult = await getAuthenticatedUserWithProfile(supabase)
+    if (authResult.error) return NextResponse.json({ error: authResult.error }, { status: 401 })
+    const { user, profile } = authResult
 
     const effectiveProfileId = profile.id
     if (!effectiveProfileId) return NextResponse.json({ error: 'Profile has no id' }, { status: 500 })

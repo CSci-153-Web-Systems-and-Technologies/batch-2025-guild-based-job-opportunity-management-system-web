@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { requireAdmin } from '@/lib/admin'
 import { createClient } from '@/lib/server'
+import { getAuthenticatedUserWithProfile } from '@/lib/auth'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -27,17 +28,9 @@ export async function POST(req: Request) {
 
     // Get authenticated user's profile to capture created_by
     const supabaseServer = await createClient()
-    const { data: userData } = await supabaseServer.auth.getUser()
-    const user = (userData as any)?.user
-    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-
-    const { data: profileData } = await supabaseServer
-      .from('profiles')
-      .select('id')
-      .eq('auth_id', user.id)
-      .maybeSingle()
-    const profile = profileData as any
-    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    const authResult = await getAuthenticatedUserWithProfile(supabaseServer)
+    if (authResult.error) return NextResponse.json({ error: authResult.error }, { status: 401 })
+    const { user, profile } = authResult
 
     const body = await req.json()
     const { title, description, category, reward_xp, slots, pay, location } = body || {}

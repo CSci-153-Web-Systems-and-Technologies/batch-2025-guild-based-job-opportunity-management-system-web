@@ -2,32 +2,17 @@ import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/server'
 import { errorResponse, successResponse } from '@/lib/api-response'
 import * as logger from '@/lib/logger'
+import { getAuthenticatedUserWithProfile } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
 
-    const { data: userData } = await supabase.auth.getUser()
-    const user = (userData as any)?.user
-    if (!user) return errorResponse('Not authenticated', 401)
+    const authResult = await getAuthenticatedUserWithProfile(supabase)
+    if (authResult.error) return errorResponse(authResult.error, 401)
+    const { profile } = authResult
 
     const body = await req.json().catch(() => ({}))
-    const rawJobId = body?.jobId ?? body?.job_id ?? body?.id
-    const jobId = typeof rawJobId === 'string' || typeof rawJobId === 'number' ? String(rawJobId).trim() : ''
-    if (!jobId) return errorResponse('Invalid job id', 400, undefined, { body })
-
-    // profile of requester
-    const { data: profileData, error: profileErr } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('auth_id', user.id)
-      .maybeSingle()
-    if (profileErr) {
-      logger.error('[api/apply] Failed to fetch profile', profileErr)
-      return errorResponse('Failed to fetch profile', 500, undefined, { profileErr })
-    }
-    const profile = profileData as { id: string } | null
-    if (!profile) return errorResponse('Profile not found', 404, undefined, { jobId })
 
     const applicantId: string = profile.id
     if (!applicantId) return errorResponse('Profile has no id', 500, undefined, { profile })

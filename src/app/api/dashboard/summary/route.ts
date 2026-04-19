@@ -1,24 +1,26 @@
 import { createClient } from '@/lib/server'
 import { errorResponse, successResponse } from '@/lib/api-response'
 import * as logger from '@/lib/logger'
+import { getAuthenticatedUserWithProfile } from '@/lib/auth'
 
 export async function GET() {
   try {
     const supabase = await createClient()
 
-    const { data: userData } = await supabase.auth.getUser()
-    const user = (userData as any)?.user
-    if (!user) return errorResponse('Not authenticated', 401)
+    const authResult = await getAuthenticatedUserWithProfile(supabase)
+    if (authResult.error) return errorResponse(authResult.error, 401)
+    const { profile } = authResult
 
+    // Fetch full profile with additional columns
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, display_name, avatar_url, role_id')
-      .eq('auth_id', user.id)
+      .eq('id', profile.id)
       .maybeSingle()
 
     if (profileError) {
-      logger.error('[api/dashboard/summary] profile error', profileError)
-      return errorResponse('Failed to fetch profile', 500, undefined, { profileError })
+      logger.error('[api/dashboard/summary] profile detailed fetch error', profileError)
+      return errorResponse('Failed to fetch full profile', 500, undefined, { profileError })
     }
 
     const profile = profileData as any | null

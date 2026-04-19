@@ -2,6 +2,7 @@ import { createClient } from '@/lib/server'
 import type { Profile, UserStats, Rank } from '@/types/db'
 import { errorResponse, successResponse } from '@/lib/api-response'
 import * as logger from '@/lib/logger'
+import { getAuthenticatedUserWithProfile } from '@/lib/auth'
 
 function clamp(n: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, n))
@@ -11,23 +12,9 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    const { data: userData } = await supabase.auth.getUser()
-    const user = (userData as any)?.user
-    if (!user) return errorResponse('Not authenticated', 401)
-
-    // Fetch profile by auth_id
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, first_name, last_name, display_name, avatar_url, role_id')
-      .eq('auth_id', user.id)
-      .maybeSingle()
-
-    if (profileError) {
-      logger.error('[api/user/stats] profile error', profileError)
-      return errorResponse('Failed to fetch profile', 500, undefined, { profileError })
-    }
-
-    const profile = profileData as Profile | null
+    const authResult = await getAuthenticatedUserWithProfile(supabase)
+    if (authResult.error) return errorResponse(authResult.error, 401)
+    const { profile } = authResult
 
     // If no profile found, we can't proceed
     if (!profile) return errorResponse('Profile not found', 404)
@@ -113,23 +100,9 @@ export async function PATCH(request: Request) {
   try {
     const supabase = await createClient()
 
-    const { data: userData } = await supabase.auth.getUser()
-    const user = (userData as any)?.user
-    if (!user) return errorResponse('Not authenticated', 401)
-
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('auth_id', user.id)
-      .maybeSingle()
-
-    if (profileError) {
-      logger.error('[api/user/stats PATCH] profile error', profileError)
-      return errorResponse('Failed to fetch profile', 500, undefined, { profileError })
-    }
-
-    const profile = profileData as Profile | null
-    if (!profile) return errorResponse('Profile not found', 404)
+    const authResult = await getAuthenticatedUserWithProfile(supabase)
+    if (authResult.error) return errorResponse(authResult.error, 401)
+    const { profile } = authResult
 
     const body = await request.json().catch(() => ({}))
     const delta = typeof body?.delta === 'number' ? body.delta : undefined
