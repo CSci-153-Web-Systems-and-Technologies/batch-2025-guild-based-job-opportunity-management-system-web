@@ -1,4 +1,5 @@
 import { createClient } from './client'
+import * as logger from './logger'
 
 type Profile = {
   id: string
@@ -10,6 +11,67 @@ type Profile = {
   avatar_url?: string
   metadata?: Record<string, unknown>
   role_id?: number
+}
+
+/**
+ * Data structure for profile upsert operations.
+ */
+interface ProfileUpsertData {
+  auth_id: string
+  email: string | null
+  first_name: string | null
+  avatar_url: string | null
+}
+
+/**
+ * Attempt to upsert a profile using optimized Supabase options.
+ * Throws if the operation fails at any stage.
+ */
+async function upsertWithOptions(supabase: any, upsertData: ProfileUpsertData): Promise<Profile> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .upsert(upsertData, { onConflict: 'auth_id' })
+    .select('*')
+
+  if (error) {
+    throw new Error(`Upsert with options failed: ${error.message || error}`)
+  }
+
+  if (data && data.length > 0) {
+    logger.debug('profile_upsert', { path: 'with_options' })
+    return data[0] as Profile
+  }
+
+  throw new Error('Upsert returned no data')
+}
+
+/**
+ * Fallback upsert without onConflict options.
+ * Some Supabase project versions do not support the
+ * onConflict + ignoreDuplicates combination. If the first attempt
+ * fails, retry with a basic upsert.
+ * Logs and rethrows on failure so the caller is aware.
+ */
+async function upsertFallback(supabase: any, upsertData: ProfileUpsertData): Promise<Profile> {
+  try {
+    const { data, error } = await supabase.from('profiles').upsert(upsertData).select('*')
+
+    if (error) {
+      throw new Error(`Fallback upsert failed: ${error.message || error}`)
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error('Fallback upsert returned no data')
+    }
+
+    logger.debug('profile_upsert', { path: 'fallback' })
+    return data[0] as Profile
+  } catch (fallbackErr: unknown) {
+    logger.error('profile_upsert_failed', {
+      error: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
+    })
+    throw fallbackErr
+  }
 }
 
 export async function ensureProfile(): Promise<Profile | null> {
@@ -26,45 +88,25 @@ export async function ensureProfile(): Promise<Profile | null> {
       (meta.first_name as string | undefined) || (meta.name as string | undefined) || ((meta.full_name as string | undefined) || '').toString().split(' ')[0] || null
     const avatar = (meta.avatar_url as string | undefined) || (meta.avatar as string | undefined) || null
 
-    const upsert = {
+    const upsertData: ProfileUpsertData = {
       auth_id: authId,
       email,
       first_name: first,
       avatar_url: avatar,
     }
 
+    // Try upsert with options first; fall back to plain upsert if it fails
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .upsert(upsert, { onConflict: 'auth_id' })
-        .select('*')
-
-      if (error) {
-        console.warn('ensureProfile upsert error (with options):', error.message || error)
-        // fall through to fallback below
-      } else if (data && data.length > 0) {
-        return data[0] as Profile
-      }
+      return await upsertWithOptions(supabase, upsertData)
     } catch (_err: unknown) {
-      // ignore and try fallback
-      console.warn('ensureProfile upsert attempt with options failed:', String(_err))
+      // With-options failed, attempt fallback
+      return await upsertFallback(supabase, upsertData)
     }
-
-    // Fallback: try a plain upsert without options
-    try {
-      const { data, error } = await supabase.from('profiles').upsert(upsert).select('*')
-      if (error) {
-        console.warn('ensureProfile upsert fallback error:', error.message || error)
-        return null
-      }
-      if (!data || data.length === 0) return null
-      return data[0] as Profile
-    } catch (_err: unknown) {
-      console.warn('ensureProfile upsert fallback failed', String(_err))
-      return null
-    }
-  } catch (_err: unknown) {
-    console.warn('ensureProfile failed', String(_err))
+  } catch (err: unknown) {
+    // Fallback also failed (rethrown from upsertFallback)
+    logger.error('profile_upsert_failed', {
+      error: err instanceof Error ? err.message : String(err),
+    })
     return null
   }
 }
