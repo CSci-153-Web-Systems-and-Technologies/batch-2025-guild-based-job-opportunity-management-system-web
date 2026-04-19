@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { requireAdmin } from '@/lib/admin'
+import * as logger from '@/lib/logger'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -96,8 +97,8 @@ export async function PATCH(req: Request) {
 
       if (updateErr || !updated) {
         // Application update failed. Attempt to roll back the slot decrement.
-        let rollbackFailed = false
-        let rollbackErrorMsg = ''
+        const originalError = updateErr || new Error('Application update returned no result')
+        let rollbackSucceeded = false
 
         try {
           const { error: rollbackErr } = await supabase
@@ -106,31 +107,44 @@ export async function PATCH(req: Request) {
             .eq('id', jobId)
 
           if (rollbackErr) {
-            rollbackFailed = true
-            rollbackErrorMsg = rollbackErr.message
+            // Rollback query failed
+            logger.error('SLOT_ROLLBACK_FAILED', {
+              jobId,
+              appId,
+              originalError: originalError.message,
+              rollbackError: rollbackErr.message,
+              action: 'Manual slot correction required',
+            })
+            return NextResponse.json(
+              {
+                error: 'Application update failed and slot count may be inconsistent. Contact administrator.',
+              },
+              { status: 500 }
+            )
           }
+
+          rollbackSucceeded = true
         } catch (rollbackException) {
-          rollbackFailed = true
-          rollbackErrorMsg = rollbackException instanceof Error ? rollbackException.message : String(rollbackException)
-        }
-
-        // Log rollback failure with full context for manual recovery
-        if (rollbackFailed) {
-          console.error('[admin/job-applications] CRITICAL: Slot count may be inconsistent', {
-            appId,
+          // Rollback threw an exception
+          logger.error('SLOT_ROLLBACK_FAILED', {
             jobId,
-            applicationUpdateError: updateErr?.message || 'Update returned falsy result',
-            rollbackError: rollbackErrorMsg,
+            appId,
+            originalError: originalError.message,
+            rollbackError: rollbackException instanceof Error ? rollbackException.message : String(rollbackException),
+            action: 'Manual slot correction required',
           })
+          return NextResponse.json(
+            {
+              error: 'Application update failed and slot count may be inconsistent. Contact administrator.',
+            },
+            { status: 500 }
+          )
         }
 
+        // Rollback succeeded
         return NextResponse.json(
           {
-            error: 'Failed to update application status',
-            message: rollbackFailed
-              ? 'Application update failed AND rollback failed. Job slot count may be inconsistent. Manual review required.'
-              : 'Application update failed but slots were restored.',
-            details: { appId, jobId },
+            error: 'Application update failed. Please try again.',
           },
           { status: 500 }
         )
@@ -150,7 +164,7 @@ export async function PATCH(req: Request) {
 
     // (notification on accept removed)
 
-    // If completed, award XP (best-effort)
+    // If completed, award XP (best-effort; non-critical)
     if (status === 'completed') {
       try {
         const applicantId = (updated as any).user_id
@@ -162,8 +176,16 @@ export async function PATCH(req: Request) {
           await supabase.from('user_stats').upsert({ user_id: applicantId, xp: next }, { onConflict: 'user_id' })
         }
       } catch (e) {
-        // swallow XP awarding errors
-        console.error('award xp failed', e)
+        // XP award is non-critical; swallow error but log it for monitoring
+        // TODO: Implement retry queue for failed XP awards to ensure eventual consistency
+        const userId = (updated as any)?.user_id
+        logger.error('xp_award_failed', {
+          event: 'xp_award_failed',
+          userId,
+          jobId,
+          appId,
+          error: e instanceof Error ? e.message : String(e),
+        })
       }
     }
 
