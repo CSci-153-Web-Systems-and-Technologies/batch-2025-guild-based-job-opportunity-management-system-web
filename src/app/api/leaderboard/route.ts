@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/server'
 import { errorResponse, successResponse } from '@/lib/api-response'
 import * as logger from '@/lib/logger'
+import { PAGINATION } from '@/constants/validation'
 
 /**
  * Raw user stats row from Supabase (with array-wrapped nested objects).
@@ -72,7 +73,7 @@ interface LeaderboardRow {
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
-    const limit = Math.min(Number(url.searchParams.get('limit') ?? '50'), 100)
+    const limit = Math.min(Number(url.searchParams.get('limit') ?? PAGINATION.DEFAULT_LIMIT), PAGINATION.MAX_LIMIT)
     const offset = Math.max(Number(url.searchParams.get('offset') ?? '0'), 0)
 
     const supabase = await createClient()

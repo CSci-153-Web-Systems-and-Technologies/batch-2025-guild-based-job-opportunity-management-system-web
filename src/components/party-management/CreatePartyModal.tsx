@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
+import { PARTY_VALIDATION } from '@/constants/validation'
 
 interface CreatePartyModalProps {
   isOpen: boolean
@@ -62,18 +63,18 @@ export function CreatePartyModal({
       return
     }
 
-    if (formData.name.trim().length < 3) {
-      setError('Party name must be at least 3 characters')
+    if (formData.name.trim().length < PARTY_VALIDATION.NAME_MIN) {
+      setError(`Party name must be at least ${PARTY_VALIDATION.NAME_MIN} characters`)
       return
     }
 
-    if (formData.name.trim().length > 50) {
-      setError('Party name must be at most 50 characters')
+    if (formData.name.trim().length > PARTY_VALIDATION.NAME_MAX) {
+      setError(`Party name must be at most ${PARTY_VALIDATION.NAME_MAX} characters`)
       return
     }
 
-    if (formData.description.trim().length > 500) {
-      setError('Description must be at most 500 characters')
+    if (formData.description.trim().length > PARTY_VALIDATION.DESCRIPTION_MAX) {
+      setError(`Description must be at most ${PARTY_VALIDATION.DESCRIPTION_MAX} characters`)
       return
     }
 
@@ -159,10 +160,10 @@ export function CreatePartyModal({
                 onChange={handleInputChange}
                 disabled={loading}
                 className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/5 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#10BCD2] focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                maxLength={50}
+                maxLength={PARTY_VALIDATION.NAME_MAX}
               />
               <p className="text-xs text-white/50 mt-1">
-                {formData.name.length}/50 characters
+                {formData.name.length}/{PARTY_VALIDATION.NAME_MAX} characters
               </p>
             </div>
 
@@ -241,10 +242,10 @@ export function CreatePartyModal({
                 disabled={loading}
                 rows={4}
                 className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/5 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#10BCD2] focus:border-transparent transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
-                maxLength={500}
+                maxLength={PARTY_VALIDATION.DESCRIPTION_MAX}
               />
               <p className="text-xs text-white/50 mt-1">
-                {formData.description.length}/500 characters
+                {formData.description.length}/{PARTY_VALIDATION.DESCRIPTION_MAX} characters
               </p>
             </div>
 

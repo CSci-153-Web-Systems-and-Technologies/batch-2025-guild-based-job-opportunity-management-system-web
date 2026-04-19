@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/server'
 import { errorResponse, successResponse } from '@/lib/api-response'
 import * as logger from '@/lib/logger'
+import { PAGINATION } from '@/constants/validation'
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
     const difficulty = url.searchParams.get('difficulty')
     const category = url.searchParams.get('category')
     const datePosted = url.searchParams.get('datePosted')
-    const limit = Number(url.searchParams.get('limit') ?? 50)
+    const limit = Number(url.searchParams.get('limit') ?? PAGINATION.DEFAULT_LIMIT)
     const offset = Number(url.searchParams.get('offset') ?? 0)
 
     const supabase = await createClient()

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
+import { PAGINATION } from '@/constants/validation'
 
 interface LeaderboardEntry {
   rank: number
@@ -19,7 +20,7 @@ export default function FullLeaderboardTable() {
     let mounted = true
     ;(async () => {
       try {
-        const res = await fetch('/api/leaderboard?limit=50')
+        const res = await fetch(`/api/leaderboard?limit=${PAGINATION.DEFAULT_LIMIT}`)
         if (!mounted) return
         if (!res.ok) return
         const json = await res.json()
