@@ -128,7 +128,10 @@ export default function JobDetailsModal({ isOpen, onClose, jobId, job }: JobDeta
           })
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        throw new Error(errData.error || `Failed to apply (${res.status})`)
+        const errorMsg = typeof errData.error === 'string' 
+          ? errData.error 
+          : (errData.error as any)?.message || `Failed to apply (${res.status})`
+        throw new Error(errorMsg)
       }
       setApplicationStatus('success')
       // show a brief success toast

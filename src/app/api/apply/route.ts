@@ -14,6 +14,14 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}))
 
+    /**
+     * Extract jobId from request body. The modal sends { jobId: <resolved> }.
+     * This is the job's primary identifier from the jobs table.
+     * Must be validated before use to prevent "jobId is not defined" errors.
+     */
+    const jobId = String(body.jobId || '').trim()
+    if (!jobId) return errorResponse('Job ID is required', 400)
+
     const applicantId: string = profile.id
     if (!applicantId) return errorResponse('Profile has no id', 500, undefined, { profile })
 
