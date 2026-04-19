@@ -41,7 +41,7 @@ export async function PATCH(req: NextRequest, context: any) {
     if (!appData) return NextResponse.json({ error: 'Application not found' }, { status: 404 })
 
     // fetch job
-    const { data: jobData, error: jobErr } = await supabase.from('jobs').select('id, created_by, slots, reward_xp').eq('id', jobId).maybeSingle()
+    const { data:jobData, error: jobErr } = await supabase.from('jobs').select('id, created_by, slots, reward_xp').eq('id', jobId).maybeSingle()
     if (jobErr) return NextResponse.json({ error: 'Failed to fetch job' }, { status: 500 })
     if (!jobData) return NextResponse.json({ error: 'Job not found' }, { status: 404 })
 
@@ -62,21 +62,30 @@ export async function PATCH(req: NextRequest, context: any) {
       return NextResponse.json({ error: `Invalid status. Allowed: ${ALLOWED_STATUSES.join(', ')}` }, { status: 400 })
     }
 
-    // If accepting, ensure slots limit
+    // If accepting, atomically claim a slot
     if (status === 'accepted') {
-      const slots = (jobData as any).slots ?? 0
-      if (typeof slots === 'number' && slots > 0) {
-        const { count, error: cntErr } = await supabase
-          .from('job_applications')
-          .select('id', { count: 'exact', head: true })
-          .eq('job_id', jobId)
-          .eq('status', 'accepted')
+      const slots = (jobData as any)?.slots ?? 0
+      if (typeof slots !== 'number' || slots <= 0) {
+        return NextResponse.json({ error: 'No slots available' }, { status: 400 })
+      }
 
-        if (cntErr) return NextResponse.json({ error: 'Failed to check accepted count' }, { status: 500 })
-        const acceptedCount = Number((count ?? 0) as number)
-        if (acceptedCount >= slots) {
-          return NextResponse.json({ error: 'No slots available' }, { status: 400 })
-        }
+      // Try to decrement the job slots using optimistic concurrency: only update
+      // if the slots value matches what we read. This avoids race conditions
+      // where two requests attempt to accept simultaneously. If the update affects no rows,
+      // treat it as "no slots available".
+      const desired = Number(slots) - 1
+      const { data: updatedJob, error: jobUpdateErr } = await supabase
+        .from('jobs')
+        .update({ slots: desired })
+        .eq('id', jobId)
+        .eq('slots', slots)
+        .select('id, slots')
+        .maybeSingle()
+
+      if (jobUpdateErr) return NextResponse.json({ error: 'Failed to claim slot' }, { status: 500 })
+      if (!updatedJob) {
+        // Someone else modified slots concurrently or no slots left
+        return NextResponse.json({ error: 'No slots available' }, { status: 409 })
       }
     }
 
