@@ -3,38 +3,68 @@ import { errorResponse, successResponse } from '@/lib/api-response'
 import * as logger from '@/lib/logger'
 
 /**
- * User stats row with profile and rank info.
+ * Raw user stats row from Supabase (with array-wrapped nested objects).
+ */
+interface RawUserStatsRow {
+  xp: number
+  user_id: string
+  current_rank_id: number | null
+  profiles: Array<{
+    id: string
+    display_name: string | null
+    avatar_url: string | null
+    email: string | null
+  }> | null
+  ranks: Array<{
+    id: number
+    name: string
+    min_xp: number
+    max_xp: number | null
+  }> | null
+}
+
+/**
+ * Normalized user stats row for internal use.
  */
 interface UserStatsRow {
   xp: number
   user_id: string
-  profiles: {
+  current_rank_id: number | null
+  profile: {
     id: string
-    first_name: string | null
     display_name: string | null
     avatar_url: string | null
     email: string | null
   } | null
-  current_rank_id: number | null
-  ranks: { name: string } | null
+  rank: {
+    id: number
+    name: string
+    min_xp: number
+    max_xp: number | null
+  } | null
 }
 
 /**
- * Party member record with party name.
+ * Raw party membership record from Supabase (parties as array).
  */
-interface PartyMemberRow {
+interface RawPartyMembership {
   user_id: string
-  parties: { name: string } | null
+  parties: Array<{ name: string }> | null
 }
 
 /**
- * Leaderboard entry in the response.
+ * Leaderboard entry in the final response.
  */
 interface LeaderboardRow {
   rank: number
   xp: number
   user_id: string
-  profile: UserStatsRow['profiles']
+  profile: {
+    id: string
+    display_name: string | null
+    avatar_url: string | null
+    email: string | null
+  } | null
   rank_name: string | null
   party_name: string | null
 }
@@ -47,10 +77,26 @@ export async function GET(request: Request) {
 
     const supabase = await createClient()
 
-    // Select user_stats joined with profiles and ranks
-    const { data, error } = await supabase
+    // Query user_stats with nested joins for profiles and ranks
+    const { data: rawData, error } = await supabase
       .from('user_stats')
-      .select('xp, user_id, profiles(id, first_name, display_name, avatar_url, email), current_rank_id, ranks(name)')
+      .select(`
+        xp,
+        user_id,
+        current_rank_id,
+        profiles (
+          id,
+          display_name,
+          avatar_url,
+          email
+        ),
+        ranks (
+          id,
+          name,
+          min_xp,
+          max_xp
+        )
+      `)
       .order('xp', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -59,34 +105,42 @@ export async function GET(request: Request) {
       return errorResponse(error.message ?? 'Failed to fetch leaderboard', 500, undefined, { error })
     }
 
-    const rows = (data ?? []) as UserStatsRow[]
+    // Normalize raw data (Supabase returns nested objects as arrays)
+    const rows: UserStatsRow[] = (rawData ?? []).map((raw: RawUserStatsRow) => ({
+      xp: raw.xp,
+      user_id: raw.user_id,
+      current_rank_id: raw.current_rank_id,
+      profile: raw.profiles?.[0] ?? null,
+      rank: raw.ranks?.[0] ?? null,
+    }))
 
-    // Fetch party membership for these user ids to attach party names
+    // Batch fetch party memberships for all users in a single query
     const userIds = rows.map((r) => r.user_id).filter(Boolean)
-    let partiesMap: Record<string, string | null> = {}
+    const partyMap = new Map<string, string | null>()
+
     if (userIds.length > 0) {
-      const { data: pmData, error: pmError } = await supabase
+      const { data: rawMemberships, error: membershipsError } = await supabase
         .from('party_members')
         .select('user_id, parties(name)')
         .in('user_id', userIds)
 
-      if (pmError) {
-        logger.error('[api/leaderboard] party_members fetch error:', pmError)
-      } else if (pmData) {
-        pmData.forEach((pm: PartyMemberRow) => {
-          partiesMap[pm.user_id] = pm.parties?.name ?? null
+      if (membershipsError) {
+        logger.error('[api/leaderboard] party_members fetch error:', membershipsError)
+      } else if (rawMemberships) {
+        rawMemberships.forEach((membership: RawPartyMembership) => {
+          partyMap.set(membership.user_id, membership.parties?.[0]?.name ?? null)
         })
       }
     }
 
-    // Build normalized list
+    // Build the final response in a single pass
     const list: LeaderboardRow[] = rows.map((row, idx) => ({
       rank: offset + idx + 1,
       xp: row.xp || 0,
       user_id: row.user_id,
-      profile: row.profiles || null,
-      rank_name: row.ranks?.name ?? null,
-      party_name: partiesMap[row.user_id] ?? null,
+      profile: row.profile || null,
+      rank_name: row.rank?.name ?? null,
+      party_name: partyMap.get(row.user_id) ?? null,
     }))
 
     return successResponse(list)
